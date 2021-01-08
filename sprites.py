@@ -3,14 +3,20 @@ from utilities import *
 
 class Cell(pg.sprite.Sprite):
     CELL_CONTENT = {  # TODO: replace with images
-        '*': load_image(''),  # mine
-        '?': load_image(''),  # question mark
-        'F': load_image('')  # flag mark
+        '*': None,  # mine
+        '?': None,  # question mark
+        'F': None  # flag mark
     }
 
-    def __init__(self, x: int, y: int, cell_size: int, *groups):
+    def __init__(self, x, y, cell_size, *groups):
         super().__init__(*groups)
         self.content = None
+        self.rect = pg.rect.Rect(x, y, cell_size, cell_size)
+        s = pg.Surface((cell_size, cell_size))
+        pg.draw.polygon(s, pg.Color('white'), [(cell_size, 0), (0, 0), (0, cell_size)])
+        pg.draw.polygon(s, DARK_GRAY, [(cell_size, 0), (cell_size, cell_size), (0, cell_size)])
+        pg.draw.rect(s, MAIN_GRAY, (2, 2, cell_size - 4, cell_size - 4), 0)
+        self.image = s
 
     def set_content(self, content):
         """:param content: any key from Cell.CELL_CONTENT dictionary or int (count of neighbor mines)"""

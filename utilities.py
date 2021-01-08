@@ -1,6 +1,9 @@
 import os
 import pygame as pg
 
+MAIN_GRAY = (191, 191, 191)
+DARK_GRAY = (127, 127, 129)
+
 
 def terminate():
     pg.quit()
