@@ -24,6 +24,10 @@ class Cell(pg.sprite.Sprite):
         else:
             raise ValueError('content must be "mine" or int (count of neighbor mines in range [1, 8])')
 
+    def hold(self):
+        self.image.fill(DARK_GRAY)
+        pg.draw.rect(self.image, MAIN_GRAY, (1, 1, self.rect.w - 2, self.rect.h - 2), 0)
+
     def open(self, user=True):
         """:param user: is cell opening by user or by program (on game ending)"""
 
@@ -42,9 +46,45 @@ class Cell(pg.sprite.Sprite):
 
 class Indicator(pg.sprite.Sprite):
     def __init__(self, x, y, size, *groups):
+        self.size = size
         self.image = draw_cell(size, size)
         self.rect = pg.Rect(x, y, size, size)
+        self.lock_state = False
+        self.states = {state: load_image(f'states/{state}.png')
+                       for state in ['ok', 'win', 'move', 'lose']}
+        self.change_state('ok')
         super().__init__(*groups)
+        self.clicked = False
+
+    def change_state(self, state):
+        if not self.lock_state:
+            try:
+                self.image.blit(self.states[state], (4, 4))
+                if state == 'lose' or state == 'win':
+                    self.lock_state = True
+            except KeyError:
+                raise KeyError(f'No such state: {state}')
+
+    def click(self, mouse_pos):
+        if self.rect.collidepoint(mouse_pos):
+            self.lock_state = False
+            self.image.fill(DARK_GRAY)
+            pg.draw.rect(self.image, MAIN_GRAY,
+                         (2, 2, self.rect.w - 4, self.rect.h - 4), 0)
+            self.change_state('ok')
+            self.clicked = True
+        else:
+            self.change_state('move')
+
+    def release(self):
+        res = False
+        if self.clicked:
+            res = True
+            self.clicked = False
+            self.image = draw_cell(self.size, self.size)
+        if not self.lock_state:
+            self.change_state('ok')
+        return res
 
 
 class Counter(pg.sprite.Sprite):
