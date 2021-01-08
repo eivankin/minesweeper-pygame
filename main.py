@@ -5,8 +5,9 @@ from itertools import product
 FPS = 60
 N = 9  # Default field settings. TODO: make it editable for user
 MINES_COUNT = 10
-LEFT_INDENT, TOP_INDENT, CELL_SIZE = 15, 70, 30
+LEFT_INDENT, TOP_INDENT, CELL_SIZE = 15, 80, 30
 FIELD_INDENT = 5
+INDICATOR_SIZE = 36
 
 
 class Field(pg.sprite.Group):
@@ -59,11 +60,14 @@ class Field(pg.sprite.Group):
                     cell = queue.pop(0)
                     cell.open()
                     queue.extend(self._get_queue(cell.x, cell.y))
-                if cell_coords in self.mines:
+                lose = cell_coords in self.mines
+                win = not lose and self._check_win()
+                if win or lose:
                     for i, j in self.mines:
                         if (i, j) != cell_coords:
                             self.field[i][j].open(False)
                     self.playing = False
+                    print('You win!' if win else 'You lose!')
 
     def _get_queue(self, x, y):
         q = []
@@ -75,24 +79,35 @@ class Field(pg.sprite.Group):
                 )))
         return q
 
+    def _check_win(self):
+        return all(cell.is_opened or cell.content == 'mine'
+                   for row in self.field for cell in row)
+
 
 if __name__ == '__main__':
     pg.init()
     clock = pg.time.Clock()
+    panel_y = LEFT_INDENT - FIELD_INDENT + (TOP_INDENT - 25) / 2 - INDICATOR_SIZE // 2
+    indicator = Indicator(LEFT_INDENT + CELL_SIZE * N / 2 - INDICATOR_SIZE // 2, panel_y, INDICATOR_SIZE)
+    mine_counter = Counter(LEFT_INDENT * 2 - FIELD_INDENT, panel_y, INDICATOR_SIZE * 2, INDICATOR_SIZE, MINES_COUNT)
+    moves_counter = Counter(N * CELL_SIZE + LEFT_INDENT - FIELD_INDENT * 2 - INDICATOR_SIZE * 2,
+                            panel_y, INDICATOR_SIZE * 2, INDICATOR_SIZE)
+    panel = pg.sprite.Group(indicator, mine_counter, moves_counter)
     field = Field(N, N, LEFT_INDENT, TOP_INDENT, CELL_SIZE)
     screen = pg.display.set_mode((LEFT_INDENT * 2 + CELL_SIZE * N, TOP_INDENT + CELL_SIZE * N + LEFT_INDENT))
     pg.display.set_caption('Minesweeper')
-    x0, y0 = LEFT_INDENT - FIELD_INDENT, TOP_INDENT - FIELD_INDENT
-    x1, y1 = LEFT_INDENT + N * CELL_SIZE + FIELD_INDENT, TOP_INDENT + N * CELL_SIZE + FIELD_INDENT
+    screen.fill(MAIN_GRAY)
+    screen.blit(draw_cell(N * CELL_SIZE + FIELD_INDENT * 2, N * CELL_SIZE + FIELD_INDENT * 2, FIELD_INDENT, False),
+                (LEFT_INDENT - FIELD_INDENT, TOP_INDENT - FIELD_INDENT))
+    screen.blit(draw_cell(N * CELL_SIZE + FIELD_INDENT * 2, TOP_INDENT - 25, convex=False),
+                (LEFT_INDENT - FIELD_INDENT, LEFT_INDENT - FIELD_INDENT))
     while True:
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 terminate()
             if event.type == pg.MOUSEBUTTONDOWN:
                 field.get_click(event.pos)
-        screen.fill(MAIN_GRAY)
-        pg.draw.polygon(screen, DARK_GRAY, [(x1, y0), (x0, y0), (x0, y1)])
-        pg.draw.polygon(screen, pg.Color('white'), [(x1, y0), (x1, y1), (x0, y1)])
         field.draw(screen)
+        panel.draw(screen)
         pg.display.flip()
         clock.tick(FPS)

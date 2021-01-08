@@ -41,8 +41,15 @@ class Cell(pg.sprite.Sprite):
 
 
 class Indicator(pg.sprite.Sprite):
-    pass
+    def __init__(self, x, y, size, *groups):
+        self.image = draw_cell(size, size)
+        self.rect = pg.Rect(x, y, size, size)
+        super().__init__(*groups)
 
 
 class Counter(pg.sprite.Sprite):
-    pass
+    def __init__(self, x, y, width, height, start_value=0, *groups):
+        self.value = start_value
+        self.image = draw_cell(width, height, 2, False)
+        self.rect = pg.Rect(x, y, width, height)
+        super().__init__(*groups)

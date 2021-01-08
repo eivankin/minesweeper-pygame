@@ -25,8 +25,9 @@ def load_image(name: str, color_key=None):
 
 def draw_cell(width, height, indent=3, convex=True) -> pg.Surface:
     s = pg.Surface((width, height))
+    points = [(0, height), (height / 2, height / 2), (width - height / 2, height / 2), (width, 0)]
     bright_vertex, dark_vertex = ((0, 0), (width, height)) if convex else ((width, height), (0, 0))
-    pg.draw.polygon(s, pg.Color('white'), [(width, 0), bright_vertex, (0, height)])
-    pg.draw.polygon(s, DARK_GRAY, [(width, 0), dark_vertex, (0, height)])
+    pg.draw.polygon(s, pg.Color('white'), [*points, bright_vertex])
+    pg.draw.polygon(s, DARK_GRAY, [*points, dark_vertex])
     pg.draw.rect(s, MAIN_GRAY, (indent, indent, width - indent * 2, height - indent * 2), 0)
     return s
