@@ -17,6 +17,7 @@ class Cell(pg.sprite.Sprite):
         pg.draw.polygon(s, DARK_GRAY, [(cell_size, 0), (cell_size, cell_size), (0, cell_size)])
         pg.draw.rect(s, MAIN_GRAY, (2, 2, cell_size - 4, cell_size - 4), 0)
         self.image = s
+        self.is_opened = False
 
     def set_content(self, content):
         """:param content: any key from Cell.CELL_CONTENT dictionary or int (count of neighbor mines)"""
@@ -27,6 +28,14 @@ class Cell(pg.sprite.Sprite):
                 self.content = self.CELL_CONTENT[content]
             except KeyError:
                 raise KeyError('no such content for cell')
+
+    def click(self):
+        if not self.is_opened:
+            self.image.fill(DARK_GRAY)
+            pg.draw.rect(self.image, MAIN_GRAY, (1, 1, self.rect.w - 2, self.rect.h - 2), 0)
+            if self.content:
+                self.image.blit(self.content, (0, 0))
+            self.is_opened = True
 
 
 class Indicator(pg.sprite.Sprite):

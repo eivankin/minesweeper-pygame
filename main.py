@@ -20,7 +20,7 @@ class Field(pg.sprite.Group):
         self.first_move = True
 
     def init_mines(self, exclude_coords, mines_count=MINES_COUNT):
-        pass
+        print(f'{mines_count} mines initialized, {exclude_coords} is empty')  # TODO
 
     def get_cell(self, mouse_pos):
         x, y = mouse_pos
@@ -29,7 +29,13 @@ class Field(pg.sprite.Group):
         return (i, j) if 0 <= i <= self.height and 0 <= j <= self.width else None
 
     def get_click(self, mouse_pos):
-        pass
+        cell_coords = self.get_cell(mouse_pos)
+        if cell_coords:
+            if self.first_move:
+                self.init_mines(cell_coords)
+                self.first_move = False
+            j, i = cell_coords
+            self.field[i][j].click()
 
 
 if __name__ == '__main__':
@@ -43,6 +49,8 @@ if __name__ == '__main__':
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 terminate()
+            if event.type == pg.MOUSEBUTTONDOWN:
+                field.get_click(event.pos)
         screen.fill(MAIN_GRAY)
         pg.draw.polygon(screen, DARK_GRAY, [(x1, y0), (x0, y0), (x0, y1)])
         pg.draw.polygon(screen, pg.Color('white'), [(x1, y0), (x1, y1), (x0, y1)])
