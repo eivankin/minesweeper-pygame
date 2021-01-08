@@ -2,40 +2,43 @@ from utilities import *
 
 
 class Cell(pg.sprite.Sprite):
-    CELL_CONTENT = {  # TODO: replace with images
-        '*': None,  # mine
-        '?': None,  # question mark
-        'F': None  # flag mark
-    }
-
     def __init__(self, x, y, cell_size, *groups):
         super().__init__(*groups)
-        self.content = None
+        self.content = 0
+        self.content_image = None
         self.rect = pg.rect.Rect(x, y, cell_size, cell_size)
-        s = pg.Surface((cell_size, cell_size))
-        pg.draw.polygon(s, pg.Color('white'), [(cell_size, 0), (0, 0), (0, cell_size)])
-        pg.draw.polygon(s, DARK_GRAY, [(cell_size, 0), (cell_size, cell_size), (0, cell_size)])
-        pg.draw.rect(s, MAIN_GRAY, (2, 2, cell_size - 4, cell_size - 4), 0)
-        self.image = s
+        self.image = draw_cell(cell_size, cell_size)
         self.is_opened = False
 
     def set_content(self, content):
-        """:param content: any key from Cell.CELL_CONTENT dictionary or int (count of neighbor mines)"""
-        if type(content) == int:
-            self.content = content
-        else:
-            try:
-                self.content = self.CELL_CONTENT[content]
-            except KeyError:
-                raise KeyError('no such content for cell')
+        """:param content: string 'mine' or int (count of neighbor mines in range [1, 8])"""
 
-    def click(self):
+        if type(content) == int and 0 < content < 9:
+            self.content = content
+            try:  # TODO: draw all numbers and remove try-except
+                self.content_image = load_image(f'numbers/{content}.png')
+            except:
+                pass
+        elif content == 'mine':
+            self.content = content
+            self.content_image = load_image(f'{content}.png')
+        else:
+            raise ValueError('content must be "mine" or int (count of neighbor mines in range [1, 8])')
+
+    def open(self, user=True):
+        """:param user: is cell opening by user or by program (on game ending)"""
+
         if not self.is_opened:
             self.image.fill(DARK_GRAY)
-            pg.draw.rect(self.image, MAIN_GRAY, (1, 1, self.rect.w - 2, self.rect.h - 2), 0)
-            if self.content:
-                self.image.blit(self.content, (0, 0))
+            pg.draw.rect(self.image, pg.Color('red') if user and self.content == 'mine' else MAIN_GRAY,
+                         (1, 1, self.rect.w - 2, self.rect.h - 2), 0)
+            if self.content_image:
+                self.image.blit(self.content_image, (0, 0))
             self.is_opened = True
+
+    def __repr__(self):
+        """For debugging"""
+        return str(self.content) if self.content != 'mine' else '*'
 
 
 class Indicator(pg.sprite.Sprite):
