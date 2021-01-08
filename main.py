@@ -17,7 +17,7 @@ class Field(pg.sprite.Group):
         self.left = left_indent
         self.top = top_indent
         self.cell_size = cell_size
-        self.field = [[Cell(left_indent + y * cell_size, top_indent + x * cell_size, cell_size, self)
+        self.field = [[Cell(x, y, cell_size, left_indent, top_indent, self)
                        for y in range(width)] for x in range(height)]
         self.first_move = True
         self.mines = {}
@@ -35,7 +35,7 @@ class Field(pg.sprite.Group):
                                    row[max(0, c[1] - 1):min(self.w, c[1] + 2)]):
                     cell.set_content(cell.content + 1)
             coords.remove(c)
-        # # DEBUG
+        # DEBUG
         # from pprint import pprint
         # pprint(self.field)
 
@@ -54,11 +54,26 @@ class Field(pg.sprite.Group):
                     self.first_move = False
                 i, j = cell_coords
                 self.field[i][j].open()
+                queue = self._get_queue(i, j)
+                while queue:
+                    cell = queue.pop(0)
+                    cell.open()
+                    queue.extend(self._get_queue(cell.x, cell.y))
                 if cell_coords in self.mines:
                     for i, j in self.mines:
                         if (i, j) != cell_coords:
                             self.field[i][j].open(False)
                     self.playing = False
+
+    def _get_queue(self, x, y):
+        q = []
+        if self.field[x][y].content == 0:
+            for row in self.field[max(0, x - 1):min(self.h, x + 2)]:
+                q.extend(list(filter(
+                    lambda c: c.content != 'mine' and not c.is_opened,
+                    row[max(0, y - 1):min(self.w, y + 2)]
+                )))
+        return q
 
 
 if __name__ == '__main__':
@@ -66,6 +81,7 @@ if __name__ == '__main__':
     clock = pg.time.Clock()
     field = Field(N, N, LEFT_INDENT, TOP_INDENT, CELL_SIZE)
     screen = pg.display.set_mode((LEFT_INDENT * 2 + CELL_SIZE * N, TOP_INDENT + CELL_SIZE * N + LEFT_INDENT))
+    pg.display.set_caption('Minesweeper')
     x0, y0 = LEFT_INDENT - FIELD_INDENT, TOP_INDENT - FIELD_INDENT
     x1, y1 = LEFT_INDENT + N * CELL_SIZE + FIELD_INDENT, TOP_INDENT + N * CELL_SIZE + FIELD_INDENT
     while True:

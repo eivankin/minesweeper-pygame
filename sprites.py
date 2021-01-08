@@ -2,8 +2,10 @@ from utilities import *
 
 
 class Cell(pg.sprite.Sprite):
-    def __init__(self, x, y, cell_size, *groups):
+    def __init__(self, x, y, cell_size, left_indent, top_indent, *groups):
         super().__init__(*groups)
+        self.x, self.y = x, y
+        x, y = left_indent + y * cell_size, top_indent + x * cell_size
         self.content = 0
         self.content_image = None
         self.rect = pg.rect.Rect(x, y, cell_size, cell_size)
