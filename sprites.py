@@ -15,10 +15,7 @@ class Cell(pg.sprite.Sprite):
 
         if type(content) == int and 0 < content < 9:
             self.content = content
-            try:  # TODO: draw all numbers and remove try-except
-                self.content_image = load_image(f'numbers/{content}.png')
-            except:
-                pass
+            self.content_image = load_image(f'numbers/{content}.png')
         elif content == 'mine':
             self.content = content
             self.content_image = load_image(f'{content}.png')
