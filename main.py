@@ -71,9 +71,14 @@ class Field(pg.sprite.Group):
                 win = not lose and self._check_win()
                 if win or lose:
                     pg.time.set_timer(pg.USEREVENT, 0)
-                    for i, j in self.mines.union(self.marked):
+                    queue = self.marked if win else self.mines.union(self.marked)
+                    for i, j in queue:
                         if (i, j) != cell_coords:
                             self.field[i][j].open(False)
+                    if win:
+                        for i, j in self.mines:
+                            self.field[i][j].mark = None
+                            self.field[i][j].set_mark()
                     self.playing = False
                     self.indicator.change_state('win' if win else 'lose')
                     # print('You win!' if win else 'You lose!')
