@@ -4,7 +4,7 @@ from itertools import product
 
 FPS = 60
 N = 9  # Default field settings. TODO: make it editable for user
-MINES_COUNT = 10
+MINES_COUNT = 2
 LEFT_INDENT, TOP_INDENT, CELL_SIZE = 15, 94, 30
 FIELD_INDENT = 5
 INDICATOR_SIZE = 50
@@ -28,6 +28,7 @@ class Field(pg.sprite.Group):
         self.mines = set()
         self.playing = True
         self.last_coords = None
+        self.marked = set()
 
     def init_mines(self, exclude_coords, mines_count=MINES_COUNT):
         coords = set(product(range(self.h), range(self.w)))
@@ -69,7 +70,7 @@ class Field(pg.sprite.Group):
                 lose = cell_coords in self.mines
                 win = not lose and self._check_win()
                 if win or lose:
-                    for i, j in self.mines:
+                    for i, j in self.mines.union(self.marked):
                         if (i, j) != cell_coords:
                             self.field[i][j].open(False)
                     self.playing = False
@@ -87,10 +88,14 @@ class Field(pg.sprite.Group):
                     self.indicator.change_state('move')
                     self.last_coords = cell_coords
                     self.field[i][j].hold()
-                elif pressed[2] and (self.counter.get_value() > 0 or self.field[i][j].mark == 'Q'):
+                elif pressed[2] and (self.counter.get_value() > 0 or self.field[i][j].mark is not None):
                     deltas = {'F': -1, 'Q': 1, None: 0}
                     self.field[i][j].set_mark()
                     self.counter.change_value(deltas[self.field[i][j].mark])
+                    if self.field[i][j].mark == 'F':
+                        self.marked.add((i, j))
+                    elif self.field[i][j].mark is None and (i, j) in self.marked:
+                        self.marked.remove((i, j))
 
     def _get_queue(self, x, y):
         q = []
