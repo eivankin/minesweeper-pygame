@@ -57,7 +57,9 @@ class Cell(pg.sprite.Sprite):
 
     def __repr__(self):
         """For debugging"""
-        return str(self.content) if self.content != 'mine' else '*'
+        if self.content != 0:
+            return str(self.content) if self.content != 'mine' else '*'
+        return str(self.mark)
 
 
 class Indicator(pg.sprite.Sprite):

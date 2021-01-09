@@ -4,7 +4,7 @@ from itertools import product
 
 FPS = 60
 N = 9  # Default field settings. TODO: make it editable for user
-MINES_COUNT = 2
+MINES_COUNT = 10
 LEFT_INDENT, TOP_INDENT, CELL_SIZE = 15, 94, 30
 FIELD_INDENT = 5
 INDICATOR_SIZE = 50
@@ -70,6 +70,7 @@ class Field(pg.sprite.Group):
                 lose = cell_coords in self.mines
                 win = not lose and self._check_win()
                 if win or lose:
+                    pg.time.set_timer(pg.USEREVENT, 0)
                     for i, j in self.mines.union(self.marked):
                         if (i, j) != cell_coords:
                             self.field[i][j].open(False)
