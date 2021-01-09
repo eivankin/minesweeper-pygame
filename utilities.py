@@ -1,5 +1,6 @@
 import os
 import pygame as pg
+import re
 
 MAIN_GRAY = (191, 191, 191)
 DARK_GRAY = (127, 127, 129)
@@ -31,3 +32,25 @@ def draw_cell(width, height, indent=3, convex=True) -> pg.Surface:
     pg.draw.polygon(s, DARK_GRAY, [*points, dark_vertex])
     pg.draw.rect(s, MAIN_GRAY, (indent, indent, width - indent * 2, height - indent * 2), 0)
     return s
+
+
+class AbstractValidator:
+    def __init__(self):
+        pass
+
+    def validate(self, value: str) -> bool:
+        pass
+
+
+class IntValidator(AbstractValidator):
+    def __init__(self, min_val: int, max_val: int):
+        """:param min_val: minimal value of valid integer (inclusively).
+        :param max_val: maximal value of valid integer (inclusively)."""
+        super().__init__()
+        self.min_val, self.max_val = min_val, max_val
+
+    def validate(self, value: str) -> bool:
+        """:param value: value to validate.
+        :return is_value_valid: True if value is a valid integer (validates by regular expression)
+        and belongs to interval [min_val, max_val]."""
+        return bool(re.match(r'[\-0-9]+', value)) and self.min_val <= int(value) <= self.max_val
