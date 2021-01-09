@@ -1,4 +1,5 @@
 from sprites import *
+from gui_sprites import TextInput, RadioButton, Button, Label
 from random import choice
 from itertools import product
 
@@ -120,8 +121,10 @@ class Field(pg.sprite.Group):
 if __name__ == '__main__':
     pg.init()
     clock = pg.time.Clock()
-
-    screen = pg.display.set_mode((LEFT_INDENT * 2 + CELL_SIZE * N, TOP_INDENT + CELL_SIZE * N + LEFT_INDENT))
+    w, h = LEFT_INDENT * 2 + CELL_SIZE * N, TOP_INDENT + CELL_SIZE * N + LEFT_INDENT
+    screens = {name: pg.Surface((w, h)) for name in ['main', 'settings', 'help']}
+    current_screen = 'settings'
+    screen = pg.display.set_mode((w, h))
     pg.display.set_caption('Minesweeper')
 
     panel_y = LEFT_INDENT - FIELD_INDENT + (TOP_INDENT - 25) / 2 - INDICATOR_SIZE // 2
@@ -133,29 +136,69 @@ if __name__ == '__main__':
     panel = pg.sprite.Group(indicator, mine_counter, timer)
     field = Field(N, N, LEFT_INDENT, TOP_INDENT, CELL_SIZE, indicator, mine_counter)
 
-    screen.fill(MAIN_GRAY)
-    screen.blit(draw_cell(N * CELL_SIZE + FIELD_INDENT * 2, N * CELL_SIZE + FIELD_INDENT * 2, FIELD_INDENT, False),
-                (LEFT_INDENT - FIELD_INDENT, TOP_INDENT - FIELD_INDENT))
-    screen.blit(draw_cell(N * CELL_SIZE + FIELD_INDENT * 2, TOP_INDENT - 25, convex=False),
-                (LEFT_INDENT - FIELD_INDENT, LEFT_INDENT - FIELD_INDENT))
+    screens['main'].fill(MAIN_GRAY)
+    screens['main'].blit(
+        draw_cell(N * CELL_SIZE + FIELD_INDENT * 2, N * CELL_SIZE + FIELD_INDENT * 2, FIELD_INDENT, False),
+        (LEFT_INDENT - FIELD_INDENT, TOP_INDENT - FIELD_INDENT))
+    screens['main'].blit(draw_cell(N * CELL_SIZE + FIELD_INDENT * 2, TOP_INDENT - 25, convex=False),
+                         (LEFT_INDENT - FIELD_INDENT, LEFT_INDENT - FIELD_INDENT))
+
+    font = pg.font.Font('data/lcd.ttf', 20)
+    settings_layout = pg.sprite.Group()
+    radio_group = pg.sprite.Group()
+    r = 8
+    x = FIELD_INDENT + 2 * r + 5
+    header = Label(LEFT_INDENT, LEFT_INDENT, 'Difficulty', pg.font.Font('data/lcd.ttf', 24), settings_layout)
+
+    y = header.rect.y + header.rect.h + 10
+    newbie_button = RadioButton(FIELD_INDENT, y, r, radio_group, settings_layout)
+    newbie_label = Label(x, y, 'Newbie (9×9, 10 mines)', font, settings_layout)
+
+    y = newbie_button.rect.y + r * 2 + 10
+    amateur_button = RadioButton(FIELD_INDENT, y, r, radio_group, settings_layout)
+    amateur_label = Label(x, y, 'Amateur (16×16, 40 mines)', font, settings_layout)
+
+    y = amateur_button.rect.y + r * 2 + 10
+    professional_button = RadioButton(FIELD_INDENT, y, r, radio_group, settings_layout)
+    professional_label = Label(x, y, 'Professional (16×30, 99 mines)', font, settings_layout)
+
+    y = professional_button.rect.y + r * 2 + 10
+    custom_button = RadioButton(FIELD_INDENT, y, r, radio_group, settings_layout)
+    custom_label = Label(x, y, 'Custom', font, settings_layout)
+
+    y = custom_button.rect.y + r * 2 + 15
+    sep, shift = 70, 10
+    width_label = Label(x, y + shift, 'Width:', font, settings_layout)
+    width_input = TextInput(x + sep, y, 60, 30, font, IntValidator(9, 30), settings_layout)
+    height_label = Label(x, y + 40 + shift, 'Height:', font, settings_layout)
+    height_input = TextInput(x + sep, y + 40, 60, 30, font, IntValidator(9, 30), settings_layout)
+    mines_count_label = Label(x, y + 80 + shift, 'Mines:', font, settings_layout)
+    mines_count_input = TextInput(x + sep, y + 80, 60, 30, font, IntValidator(10, 99), settings_layout)
+
+    ok_button = Button(w - 100, y + 150, 75, 30, 'OK', font, settings_layout)
+    screens['settings'].fill(MAIN_GRAY)
+
     while True:
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 terminate()
-            if event.type == pg.MOUSEBUTTONDOWN:
-                field.hold(event.pos)
-                indicator.click(event.pos)
-            if event.type == pg.MOUSEBUTTONUP:
-                field.get_click()
-                if indicator.release():
-                    timer.set_value(0)
-                    pg.time.set_timer(pg.USEREVENT, 0)
-                    mine_counter.set_value(MINES_COUNT)
-                    field.__init__(N, N, LEFT_INDENT, TOP_INDENT, CELL_SIZE, indicator, mine_counter)
-            if event.type == pg.USEREVENT:
-                timer.change_value(1)
+            if current_screen == 'main':
+                if event.type == pg.MOUSEBUTTONDOWN:
+                    field.hold(event.pos)
+                    indicator.click(event.pos)
+                if event.type == pg.MOUSEBUTTONUP:
+                    field.get_click()
+                    if indicator.release():
+                        timer.set_value(0)
+                        pg.time.set_timer(pg.USEREVENT, 0)
+                        mine_counter.set_value(MINES_COUNT)
+                        field.__init__(N, N, LEFT_INDENT, TOP_INDENT, CELL_SIZE, indicator, mine_counter)
+                if event.type == pg.USEREVENT:
+                    timer.change_value(1)
         panel.update()
-        field.draw(screen)
-        panel.draw(screen)
+        field.draw(screens['main'])
+        panel.draw(screens['main'])
+        settings_layout.draw(screens['settings'])
+        screen.blit(screens[current_screen], (0, 0))
         pg.display.flip()
         clock.tick(FPS)
