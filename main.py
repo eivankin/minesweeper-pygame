@@ -59,6 +59,7 @@ class Field(pg.sprite.Group):
                 if self.first_move:
                     self.init_mines(cell_coords)
                     self.first_move = False
+                    pg.time.set_timer(pg.USEREVENT, 1000)
                 self.field[i][j].open()
                 queue = self._get_queue(i, j)
                 while queue:
@@ -136,8 +137,12 @@ if __name__ == '__main__':
             if event.type == pg.MOUSEBUTTONUP:
                 field.get_click()
                 if indicator.release():
+                    timer.set_value(0)
+                    pg.time.set_timer(pg.USEREVENT, 0)
                     mine_counter.set_value(MINES_COUNT)
                     field.__init__(N, N, LEFT_INDENT, TOP_INDENT, CELL_SIZE, indicator, mine_counter)
+            if event.type == pg.USEREVENT:
+                timer.change_value(1)
         panel.update()
         field.draw(screen)
         panel.draw(screen)
