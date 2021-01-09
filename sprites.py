@@ -39,8 +39,9 @@ class Cell(pg.sprite.Sprite):
                 self.image.blit(load_image(f'{self.mark}.png'), (0, 0))
 
     def hold(self):
-        self.image.fill(DARK_GRAY)
-        pg.draw.rect(self.image, MAIN_GRAY, (1, 1, self.rect.w - 2, self.rect.h - 2), 0)
+        if not self.is_opened:
+            self.image.fill(DARK_GRAY)
+            pg.draw.rect(self.image, MAIN_GRAY, (1, 1, self.rect.w - 2, self.rect.h - 2), 0)
 
     def open(self, user=True):
         """:param user: is cell opening by user or by program (on game ending)"""
