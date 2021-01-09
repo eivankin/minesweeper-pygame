@@ -4,6 +4,7 @@ from utilities import *
 class Cell(pg.sprite.Sprite):
     def __init__(self, x, y, cell_size, left_indent, top_indent, *groups):
         super().__init__(*groups)
+        self.size = cell_size
         self.x, self.y = x, y
         x, y = left_indent + y * cell_size, top_indent + x * cell_size
         self.content = 0
@@ -11,6 +12,7 @@ class Cell(pg.sprite.Sprite):
         self.rect = pg.rect.Rect(x, y, cell_size, cell_size)
         self.image = draw_cell(cell_size, cell_size)
         self.is_opened = False
+        self.mark = None
 
     def set_content(self, content):
         """:param content: string 'mine' or int (count of neighbor mines in range [1, 8])"""
@@ -24,6 +26,18 @@ class Cell(pg.sprite.Sprite):
         else:
             raise ValueError('content must be "mine" or int (count of neighbor mines in range [1, 8])')
 
+    def set_mark(self):
+        if not self.is_opened:
+            if self.mark is None:
+                self.mark = 'F'
+            elif self.mark == 'F':
+                self.mark = 'Q'
+            else:
+                self.mark = None
+            self.image = draw_cell(self.size, self.size)
+            if self.mark is not None:
+                self.image.blit(load_image(f'{self.mark}.png'), (0, 0))
+
     def hold(self):
         self.image.fill(DARK_GRAY)
         pg.draw.rect(self.image, MAIN_GRAY, (1, 1, self.rect.w - 2, self.rect.h - 2), 0)
@@ -31,7 +45,7 @@ class Cell(pg.sprite.Sprite):
     def open(self, user=True):
         """:param user: is cell opening by user or by program (on game ending)"""
 
-        if not self.is_opened:
+        if not self.is_opened and self.mark is None:
             self.image.fill(DARK_GRAY)
             pg.draw.rect(self.image, pg.Color('red') if user and self.content == 'mine' else MAIN_GRAY,
                          (1, 1, self.rect.w - 2, self.rect.h - 2), 0)
@@ -73,8 +87,6 @@ class Indicator(pg.sprite.Sprite):
                          (2, 2, self.rect.w - 4, self.rect.h - 4), 0)
             self.change_state('ok')
             self.clicked = True
-        else:
-            self.change_state('move')
 
     def release(self):
         res = False
