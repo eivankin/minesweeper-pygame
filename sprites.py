@@ -111,11 +111,11 @@ class Counter(pg.sprite.Sprite):
         super().__init__(*groups)
 
     def change_value(self, d):
-        self.__value += d
+        self.__value = min(self.__value + d, 999)  # Prevent overflow
         self.changed = True
 
     def set_value(self, value):
-        self.__value = value
+        self.__value = min(value, 999)  # Prevent overflow
         self.changed = True
 
     def get_value(self):
