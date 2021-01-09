@@ -4,16 +4,19 @@ from itertools import product
 
 FPS = 60
 N = 9  # Default field settings. TODO: make it editable for user
-MINES_COUNT = 1
-LEFT_INDENT, TOP_INDENT, CELL_SIZE = 15, 86, 30
+MINES_COUNT = 10
+LEFT_INDENT, TOP_INDENT, CELL_SIZE = 15, 94, 30
 FIELD_INDENT = 5
-INDICATOR_SIZE = 42
+INDICATOR_SIZE = 50
+COUNTER_WIDTH = 82
 
 
 class Field(pg.sprite.Group):
-    def __init__(self, width, height, left_indent, top_indent, cell_size, indicator, *sprites):
+    def __init__(self, width, height, left_indent, top_indent,
+                 cell_size, indicator, counter, *sprites):
         super().__init__(*sprites)
         self.indicator = indicator
+        self.counter = counter
         self.w = width
         self.h = height
         self.left = left_indent
@@ -22,7 +25,7 @@ class Field(pg.sprite.Group):
         self.field = [[Cell(x, y, cell_size, left_indent, top_indent, self)
                        for y in range(width)] for x in range(height)]
         self.first_move = True
-        self.mines = {}
+        self.mines = set()
         self.playing = True
         self.last_coords = None
 
@@ -31,7 +34,7 @@ class Field(pg.sprite.Group):
         coords.remove(exclude_coords)
         for _ in range(mines_count):
             c = choice(list(coords))
-            self.mines[c] = True
+            self.mines.add(c)
             self.field[c[0]][c[1]].set_content('mine')
             for row in self.field[max(0, c[0] - 1):min(self.h, c[0] + 2)]:
                 for cell in filter(lambda x: x.content != 'mine',
@@ -83,8 +86,10 @@ class Field(pg.sprite.Group):
                     self.indicator.change_state('move')
                     self.last_coords = cell_coords
                     self.field[i][j].hold()
-                elif pressed[2]:
+                elif pressed[2] and (self.counter.get_value() > 0 or self.field[i][j].mark == 'Q'):
+                    deltas = {'F': -1, 'Q': 1, None: 0}
                     self.field[i][j].set_mark()
+                    self.counter.change_value(deltas[self.field[i][j].mark])
 
     def _get_queue(self, x, y):
         q = []
@@ -103,15 +108,19 @@ class Field(pg.sprite.Group):
 if __name__ == '__main__':
     pg.init()
     clock = pg.time.Clock()
+
     screen = pg.display.set_mode((LEFT_INDENT * 2 + CELL_SIZE * N, TOP_INDENT + CELL_SIZE * N + LEFT_INDENT))
     pg.display.set_caption('Minesweeper')
+
     panel_y = LEFT_INDENT - FIELD_INDENT + (TOP_INDENT - 25) / 2 - INDICATOR_SIZE // 2
     indicator = Indicator(LEFT_INDENT + CELL_SIZE * N / 2 - INDICATOR_SIZE // 2, panel_y, INDICATOR_SIZE)
-    mine_counter = Counter(LEFT_INDENT * 2 - FIELD_INDENT, panel_y, INDICATOR_SIZE * 2, INDICATOR_SIZE, MINES_COUNT)
-    timer = Counter(N * CELL_SIZE + LEFT_INDENT - FIELD_INDENT * 2 - INDICATOR_SIZE * 2,
-                    panel_y, INDICATOR_SIZE * 2, INDICATOR_SIZE)
+    mine_counter = Counter(LEFT_INDENT * 2 - FIELD_INDENT, panel_y, COUNTER_WIDTH, INDICATOR_SIZE, MINES_COUNT)
+    timer = Counter(N * CELL_SIZE + LEFT_INDENT - FIELD_INDENT * 2 - COUNTER_WIDTH,
+                    panel_y, COUNTER_WIDTH, INDICATOR_SIZE)
+
     panel = pg.sprite.Group(indicator, mine_counter, timer)
-    field = Field(N, N, LEFT_INDENT, TOP_INDENT, CELL_SIZE, indicator)
+    field = Field(N, N, LEFT_INDENT, TOP_INDENT, CELL_SIZE, indicator, mine_counter)
+
     screen.fill(MAIN_GRAY)
     screen.blit(draw_cell(N * CELL_SIZE + FIELD_INDENT * 2, N * CELL_SIZE + FIELD_INDENT * 2, FIELD_INDENT, False),
                 (LEFT_INDENT - FIELD_INDENT, TOP_INDENT - FIELD_INDENT))
@@ -127,7 +136,9 @@ if __name__ == '__main__':
             if event.type == pg.MOUSEBUTTONUP:
                 field.get_click()
                 if indicator.release():
-                    field.__init__(N, N, LEFT_INDENT, TOP_INDENT, CELL_SIZE, indicator)
+                    mine_counter.set_value(MINES_COUNT)
+                    field.__init__(N, N, LEFT_INDENT, TOP_INDENT, CELL_SIZE, indicator, mine_counter)
+        panel.update()
         field.draw(screen)
         panel.draw(screen)
         pg.display.flip()

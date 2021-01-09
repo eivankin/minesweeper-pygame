@@ -66,6 +66,7 @@ class Indicator(pg.sprite.Sprite):
         self.lock_state = False
         self.states = {state: load_image(f'states/{state}.png')
                        for state in ['ok', 'win', 'move', 'lose']}
+        self.state_size = self.states['ok'].get_rect().w
         self.change_state('ok')
         super().__init__(*groups)
         self.clicked = False
@@ -73,7 +74,8 @@ class Indicator(pg.sprite.Sprite):
     def change_state(self, state):
         if not self.lock_state:
             try:
-                self.image.blit(self.states[state], (4, 4))
+                indent = (self.rect.w - self.state_size) / 2
+                self.image.blit(self.states[state], (indent, indent))
                 if state == 'lose' or state == 'win':
                     self.lock_state = True
             except KeyError:
@@ -101,7 +103,26 @@ class Indicator(pg.sprite.Sprite):
 
 class Counter(pg.sprite.Sprite):
     def __init__(self, x, y, width, height, start_value=0, *groups):
-        self.value = start_value
+        self.__value = start_value
+        self.changed = True
         self.image = draw_cell(width, height, 2, False)
         self.rect = pg.Rect(x, y, width, height)
+        self.numbers = {str(num): load_image(f'seven segment/{num}.png') for num in range(10)}
         super().__init__(*groups)
+
+    def change_value(self, d):
+        self.__value += d
+        self.changed = True
+
+    def set_value(self, value):
+        self.__value = value
+        self.changed = True
+
+    def get_value(self):
+        return self.__value
+
+    def update(self, *args):
+        if self.changed:
+            for i, n in enumerate(str(self.__value)[-3:].rjust(3, '0')):
+                self.image.blit(self.numbers[n], (2 + i * 26, 2))
+            self.changed = False
