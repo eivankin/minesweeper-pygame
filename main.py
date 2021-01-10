@@ -59,36 +59,36 @@ def init_screens(size, mines):
     y = header.rect.y + header.rect.h + 10
 
     for name, preset in PRESETS.items():
-        a, b, mines = *preset['size'], preset['mines']
-        button = RadioButton(FIELD_INDENT, y, r, settings_layout, checked=(name == 'newbie'))
-        label = Label(x, y, f'{name.title()} ({a}×{b}, {mines} mines)', font, settings_layout)
+        RadioButton(FIELD_INDENT, y, r, settings_layout, checked=(name == 'newbie'))
+        Label(x, y, f'{name.title()} ({"×".join(preset["size"])}, {preset["mines"]} mines)',
+              font, settings_layout)
         y += r * 2 + 10
 
-    custom_button = RadioButton(FIELD_INDENT, y, r, settings_layout)
-    custom_label = Label(x, y, 'Custom', font, settings_layout)
+    RadioButton(FIELD_INDENT, y, r, settings_layout)
+    Label(x, y, 'Custom', font, settings_layout)
     y += r * 2 + 10
 
     sep, shift = 70, 10
-    width_label = Label(x, y + shift, 'Width:', font, settings_layout)
-    width_input = TextInput(x + sep, y, 60, 30, font, IntValidator(1, 30),
+    Label(x, y + shift, 'Width:', font, settings_layout)
+    width_input = TextInput(x + sep, y, 60, 30, font, IntValidator(1, 24),
                             settings_layout, on_value_change=handle_change)
-    height_label = Label(x, y + 40 + shift, 'Height:', font, settings_layout)
-    height_input = TextInput(x + sep, y + 40, 60, 30, font, IntValidator(1, 30),
+    Label(x, y + 40 + shift, 'Height:', font, settings_layout)
+    height_input = TextInput(x + sep, y + 40, 60, 30, font, IntValidator(1, 24),
                              settings_layout, on_value_change=handle_change)
-    mines_count_label = Label(x, y + 80 + shift, 'Mines:', font, settings_layout)
-    mines_count_input = TextInput(x + sep, y + 80, 60, 30, font, IntValidator(1, 99), settings_layout)
+    Label(x, y + 80 + shift, 'Mines:', font, settings_layout)
+    mines_count_input = TextInput(x + sep, y + 80, 60, 30, font, IntValidator(10, 99), settings_layout)
 
-    ok_button = Button(w - 100, y + 150, 75, 30, 'OK', font, settings_layout,
-                       on_click=lambda: change_screen('main'))
+    Button(w - 100, y + 150, 75, 30, 'OK', font, settings_layout,
+           on_click=lambda: change_screen('main'))
     screens['settings'].fill(MAIN_GRAY)
 
 
 class Field(pg.sprite.Group):
     def __init__(self, width, height, left_indent, top_indent,
-                 cell_size, indicator, counter, mines_count, *sprites):
+                 cell_size, state_indicator, counter, mines_count, *sprites):
         super().__init__(*sprites)
         self.mines_count = mines_count
-        self.indicator = indicator
+        self.indicator = state_indicator
         self.counter = counter
         self.w = width
         self.h = height
@@ -102,6 +102,7 @@ class Field(pg.sprite.Group):
         self.playing = True
         self.last_coords = None
         self.marked = set()
+        self.opened = [[False] * width for _ in range(height)]
 
     def init_mines(self, exclude_coords):
         coords = set(product(range(self.h), range(self.w)))
@@ -109,9 +110,9 @@ class Field(pg.sprite.Group):
         for _ in range(self.mines_count):
             c = choice(list(coords))
             self.mines.add(c)
-            self.field[c[0]][c[1]].set_content('mine')
+            self.field[c[0]][c[1]].set_content('*')
             for row in self.field[max(0, c[0] - 1):min(self.h, c[0] + 2)]:
-                for cell in filter(lambda x: x.content != 'mine',
+                for cell in filter(lambda x: x.content != '*',
                                    row[max(0, c[1] - 1):min(self.w, c[1] + 2)]):
                     cell.set_content(cell.content + 1)
             coords.remove(c)
@@ -132,12 +133,13 @@ class Field(pg.sprite.Group):
                     self.first_move = False
                     pg.time.set_timer(pg.USEREVENT, 1000)
                 self.field[i][j].open()
+                self.opened[i][j] = True
                 queue = self._get_queue(i, j)
                 while queue:
-                    cell = queue.pop(0)
-                    cell.open()
-                    queue.extend(self._get_queue(cell.x, cell.y))
-                lose = cell_coords in self.mines
+                    x, y = queue.pop(0)
+                    self.field[x][y].open()
+                    queue.extend(self._get_queue(x, y))
+                lose = self.field[i][j].content == '*'
                 win = not lose and self._check_win()
                 if win or lose:
                     pg.time.set_timer(pg.USEREVENT, 0)
@@ -175,14 +177,15 @@ class Field(pg.sprite.Group):
     def _get_queue(self, x, y):
         q = []
         if self.field[x][y].content == 0:
-            for row in self.field[max(0, x - 1):min(self.h, x + 2)]:
-                q.extend(list(filter(
-                    lambda c: not c.is_opened and c.mark is None, row[max(0, y - 1):min(self.w, y + 2)]
-                )))
+            for dx, dy in [(1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (-1, -1), (1, -1), (-1, 1)]:
+                nx, ny = max(min(x + dx, self.h - 1), 0), max(min(y + dy, self.w - 1), 0)
+                if not self.opened[nx][ny]:
+                    q.append((nx, ny))
+                    self.opened[nx][ny] = True
         return q
 
     def _check_win(self):
-        return all(cell.is_opened or cell.content == 'mine'
+        return all(cell.is_opened or cell.content == '*'
                    for row in self.field for cell in row)
 
 

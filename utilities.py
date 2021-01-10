@@ -1,6 +1,7 @@
 import os
 import pygame as pg
 import re
+from functools import lru_cache
 
 MAIN_GRAY = (191, 191, 191)
 DARK_GRAY = (127, 127, 129)
@@ -10,7 +11,7 @@ PRESETS = {'newbie': {'size': (9, 9), 'mines': 10},
 PRESETS_FROM_INDEXES = {i: name for i, name in enumerate(PRESETS.keys())}
 # define it here for correct work
 radio_group = pg.sprite.Group()
-INT_REGEX = r'[\-0-9]+'
+INT_REGEX = r'(^|\-)[0-9]+$'
 
 
 def get_preset_name():
@@ -24,6 +25,7 @@ def terminate():
     exit()
 
 
+@lru_cache(maxsize=1024)
 def load_image(name: str, color_key=None):
     fullname = os.path.join('data', name)
     image = pg.image.load(fullname)

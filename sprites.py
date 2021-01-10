@@ -20,9 +20,9 @@ class Cell(pg.sprite.Sprite):
         if type(content) == int and 0 < content < 9:
             self.content = content
             self.content_image = load_image(f'numbers/{content}.png')
-        elif content == 'mine':
+        elif content == '*':
             self.content = content
-            self.content_image = load_image(f'{content}.png')
+            self.content_image = load_image(f'mine.png')
         else:
             raise ValueError('content must be "mine" or int (count of neighbor mines in range [1, 8])')
 
@@ -45,10 +45,10 @@ class Cell(pg.sprite.Sprite):
 
     def open(self, user=True):
         """:param user: is cell opening by user or by program (on game ending)"""
-        not_mine_cond = not user and self.content != 'mine'
+        not_mine_cond = not user and self.content != '*'
         if not self.is_opened and (self.mark is None or not_mine_cond):
             self.image.fill(DARK_GRAY)
-            pg.draw.rect(self.image, pg.Color('red') if user and self.content == 'mine' else MAIN_GRAY,
+            pg.draw.rect(self.image, pg.Color('red') if user and self.content == '*' else MAIN_GRAY,
                          (1, 1, self.rect.w - 2, self.rect.h - 2), 0)
             if not_mine_cond:
                 self.image.blit(load_image('not-mine.png'), (0, 0))
@@ -59,7 +59,7 @@ class Cell(pg.sprite.Sprite):
     def __repr__(self):
         """For debugging"""
         if self.content != 0:
-            return str(self.content) if self.content != 'mine' else '*'
+            return str(self.content) if self.content else ''
         return str(self.mark)
 
 
