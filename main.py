@@ -63,17 +63,19 @@ def init_screens(size, mines):
 
     settings_layout = pg.sprite.Group()
     r = 8
-    x = FIELD_INDENT + 2 * r + 5
-    header = Label(LEFT_INDENT, LEFT_INDENT, 'Difficulty', pg.font.Font('data/lcd.ttf', 24), settings_layout)
+    x0 = w / 2 - 150
+    y0 = h / 2 - 200
+    x = x0 + FIELD_INDENT + 2 * r + 5
+    header = Label(x0 + LEFT_INDENT, y0 + LEFT_INDENT, 'Difficulty', pg.font.Font('data/lcd.ttf', 24), settings_layout)
     y = header.rect.y + header.rect.h + 10
     radio_group.empty()
     for name, preset in PRESETS.items():
-        button = RadioButton(FIELD_INDENT, y, r, settings_layout, checked=(name == 'newbie'))
+        button = RadioButton(x0 + FIELD_INDENT, y, r, settings_layout, checked=(name == 'newbie'))
         Label(x, y, f'{name.title()} ({"×".join(map(str, preset["size"]))}, {preset["mines"]} mines)',
               font, settings_layout, assigned_item=button)
         y += r * 2 + 10
 
-    button = RadioButton(FIELD_INDENT, y, r, settings_layout)
+    button = RadioButton(x0 + FIELD_INDENT, y, r, settings_layout)
     Label(x, y, 'Custom', font, settings_layout, assigned_item=button)
     y += r * 2 + 10
 
@@ -87,7 +89,7 @@ def init_screens(size, mines):
     mines_count_input = TextInput(x + sep, y + 80, 60, 30, font, IntValidator(10, 99), settings_layout)
     Label(x, y + 80 + shift, 'Mines:', font, settings_layout, assigned_item=mines_count_input)
 
-    Button(w - 100, y + 150, 75, 30, 'OK', font, settings_layout,
+    Button(x0 + 200, y + 150, 75, 30, 'OK', font, settings_layout,
            on_click=lambda: change_screen('main'))
     screens['settings'].fill(MAIN_GRAY)
 
