@@ -1,15 +1,96 @@
 from sprites import *
-from gui_sprites import TextInput, RadioButton, Button, Label
+from gui_sprites import *
 from random import choice
 from itertools import product
 
 FPS = 60
-N = 9  # Default field settings. TODO: make it editable for user
-MINES_COUNT = 10
 LEFT_INDENT, TOP_INDENT, CELL_SIZE = 15, 94, 30
 FIELD_INDENT = 5
 INDICATOR_SIZE = 50
 COUNTER_WIDTH = 82
+PRESETS = {'newbie': {'size': (9, 9), 'mines': 10},
+           'amateur': {'size': (16, 16), 'mines': 40},
+           'prof': {'size': (30, 16), 'mines': 99}}
+
+# global variables (sorry for using it)
+current_screen = 'main'
+mines_count = 10
+current_preset = PRESETS['newbie']
+
+
+def change_screen(to):
+    global current_screen
+    if to == 'settings':
+        pg.time.set_timer(TOGGLECURSOREVENT, 500)
+    if to == 'main' and current_screen == 'settings':
+        print()
+    if to in ('main', 'settings', 'help'):
+        current_screen = to
+
+
+def init_screens(size, mines):
+    global screen, screens, field, indicator, timer, panel, mine_counter, settings_layout, \
+        mines_count_input, height_input, width_input, mines_count
+
+    field_w, field_h = size
+    mines_count = mines
+    w, h = LEFT_INDENT * 2 + CELL_SIZE * field_w, TOP_INDENT + CELL_SIZE * field_h + LEFT_INDENT
+    screens = {name: pg.Surface((w, h)) for name in ['main', 'settings', 'help']}
+    screen = pg.display.set_mode((w, h))
+    pg.display.set_caption('Minesweeper')
+
+    panel_y = LEFT_INDENT - FIELD_INDENT + (TOP_INDENT - 25) / 2 - INDICATOR_SIZE // 2
+    indicator = Indicator(LEFT_INDENT + CELL_SIZE * field_w / 2 - INDICATOR_SIZE // 2, panel_y, INDICATOR_SIZE)
+    mine_counter = Counter(LEFT_INDENT * 2 - FIELD_INDENT, panel_y, COUNTER_WIDTH, INDICATOR_SIZE, mines_count)
+    timer = Counter(field_w * CELL_SIZE + LEFT_INDENT - FIELD_INDENT * 2 - COUNTER_WIDTH,
+                    panel_y, COUNTER_WIDTH, INDICATOR_SIZE)
+
+    panel = pg.sprite.Group(indicator, mine_counter, timer)
+    field = Field(field_w, field_h, LEFT_INDENT, TOP_INDENT, CELL_SIZE, indicator, mine_counter)
+
+    screens['main'].fill(MAIN_GRAY)
+    screens['main'].blit(
+        draw_cell(field_w * CELL_SIZE + FIELD_INDENT * 2, field_h * CELL_SIZE + FIELD_INDENT * 2, FIELD_INDENT, False),
+        (LEFT_INDENT - FIELD_INDENT, TOP_INDENT - FIELD_INDENT))
+    screens['main'].blit(draw_cell(field_w * CELL_SIZE + FIELD_INDENT * 2, TOP_INDENT - 25, convex=False),
+                         (LEFT_INDENT - FIELD_INDENT, LEFT_INDENT - FIELD_INDENT))
+
+    font = pg.font.Font('data/lcd.ttf', 20)
+    settings_layout = pg.sprite.Group()
+    radio_group = pg.sprite.Group()
+    r = 8
+    x = FIELD_INDENT + 2 * r + 5
+    header = Label(LEFT_INDENT, LEFT_INDENT, 'Difficulty', pg.font.Font('data/lcd.ttf', 24), settings_layout)
+
+    y = header.rect.y + header.rect.h + 10
+    newbie_button = RadioButton(FIELD_INDENT, y, r, radio_group, settings_layout)
+    newbie_label = Label(x, y, 'Newbie (9×9, 10 mines)', font, settings_layout)
+
+    y = newbie_button.rect.y + r * 2 + 10
+    amateur_button = RadioButton(FIELD_INDENT, y, r, radio_group, settings_layout)
+    amateur_label = Label(x, y, 'Amateur (16×16, 40 mines)', font, settings_layout)
+
+    y = amateur_button.rect.y + r * 2 + 10
+    professional_button = RadioButton(FIELD_INDENT, y, r, radio_group, settings_layout)
+    professional_label = Label(x, y, 'Professional (16×30, 99 mines)', font, settings_layout)
+
+    y = professional_button.rect.y + r * 2 + 10
+    custom_button = RadioButton(FIELD_INDENT, y, r, radio_group, settings_layout)
+    custom_label = Label(x, y, 'Custom', font, settings_layout)
+
+    y = custom_button.rect.y + r * 2 + 15
+    sep, shift = 70, 10
+    width_label = Label(x, y + shift, 'Width:', font, settings_layout)
+    width_input = TextInput(x + sep, y, 60, 30, font, IntValidator(1, 30),
+                            settings_layout, on_value_change=handle_change)
+    height_label = Label(x, y + 40 + shift, 'Height:', font, settings_layout)
+    height_input = TextInput(x + sep, y + 40, 60, 30, font, IntValidator(1, 30),
+                             settings_layout, on_value_change=handle_change)
+    mines_count_label = Label(x, y + 80 + shift, 'Mines:', font, settings_layout)
+    mines_count_input = TextInput(x + sep, y + 80, 60, 30, font, IntValidator(1, 99), settings_layout)
+
+    ok_button = Button(w - 100, y + 150, 75, 30, 'OK', font, settings_layout, on_click=lambda: change_screen('main'))
+    screens['settings'].fill(MAIN_GRAY)
 
 
 class Field(pg.sprite.Group):
@@ -31,7 +112,7 @@ class Field(pg.sprite.Group):
         self.last_coords = None
         self.marked = set()
 
-    def init_mines(self, exclude_coords, mines_count=MINES_COUNT):
+    def init_mines(self, exclude_coords, mines_count=mines_count):
         coords = set(product(range(self.h), range(self.w)))
         coords.remove(exclude_coords)
         for _ in range(mines_count):
@@ -82,7 +163,6 @@ class Field(pg.sprite.Group):
                             self.field[i][j].set_mark()
                     self.playing = False
                     self.indicator.change_state('win' if win else 'lose')
-                    # print('You win!' if win else 'You lose!')
             self.last_coords = None
 
     def hold(self, mouse_pos):
@@ -121,62 +201,10 @@ class Field(pg.sprite.Group):
 if __name__ == '__main__':
     pg.init()
     clock = pg.time.Clock()
-    w, h = LEFT_INDENT * 2 + CELL_SIZE * N, TOP_INDENT + CELL_SIZE * N + LEFT_INDENT
-    screens = {name: pg.Surface((w, h)) for name in ['main', 'settings', 'help']}
-    current_screen = 'settings'
-    screen = pg.display.set_mode((w, h))
-    pg.display.set_caption('Minesweeper')
-
-    panel_y = LEFT_INDENT - FIELD_INDENT + (TOP_INDENT - 25) / 2 - INDICATOR_SIZE // 2
-    indicator = Indicator(LEFT_INDENT + CELL_SIZE * N / 2 - INDICATOR_SIZE // 2, panel_y, INDICATOR_SIZE)
-    mine_counter = Counter(LEFT_INDENT * 2 - FIELD_INDENT, panel_y, COUNTER_WIDTH, INDICATOR_SIZE, MINES_COUNT)
-    timer = Counter(N * CELL_SIZE + LEFT_INDENT - FIELD_INDENT * 2 - COUNTER_WIDTH,
-                    panel_y, COUNTER_WIDTH, INDICATOR_SIZE)
-
-    panel = pg.sprite.Group(indicator, mine_counter, timer)
-    field = Field(N, N, LEFT_INDENT, TOP_INDENT, CELL_SIZE, indicator, mine_counter)
-
-    screens['main'].fill(MAIN_GRAY)
-    screens['main'].blit(
-        draw_cell(N * CELL_SIZE + FIELD_INDENT * 2, N * CELL_SIZE + FIELD_INDENT * 2, FIELD_INDENT, False),
-        (LEFT_INDENT - FIELD_INDENT, TOP_INDENT - FIELD_INDENT))
-    screens['main'].blit(draw_cell(N * CELL_SIZE + FIELD_INDENT * 2, TOP_INDENT - 25, convex=False),
-                         (LEFT_INDENT - FIELD_INDENT, LEFT_INDENT - FIELD_INDENT))
-
-    font = pg.font.Font('data/lcd.ttf', 20)
-    settings_layout = pg.sprite.Group()
-    radio_group = pg.sprite.Group()
-    r = 8
-    x = FIELD_INDENT + 2 * r + 5
-    header = Label(LEFT_INDENT, LEFT_INDENT, 'Difficulty', pg.font.Font('data/lcd.ttf', 24), settings_layout)
-
-    y = header.rect.y + header.rect.h + 10
-    newbie_button = RadioButton(FIELD_INDENT, y, r, radio_group, settings_layout)
-    newbie_label = Label(x, y, 'Newbie (9×9, 10 mines)', font, settings_layout)
-
-    y = newbie_button.rect.y + r * 2 + 10
-    amateur_button = RadioButton(FIELD_INDENT, y, r, radio_group, settings_layout)
-    amateur_label = Label(x, y, 'Amateur (16×16, 40 mines)', font, settings_layout)
-
-    y = amateur_button.rect.y + r * 2 + 10
-    professional_button = RadioButton(FIELD_INDENT, y, r, radio_group, settings_layout)
-    professional_label = Label(x, y, 'Professional (16×30, 99 mines)', font, settings_layout)
-
-    y = professional_button.rect.y + r * 2 + 10
-    custom_button = RadioButton(FIELD_INDENT, y, r, radio_group, settings_layout)
-    custom_label = Label(x, y, 'Custom', font, settings_layout)
-
-    y = custom_button.rect.y + r * 2 + 15
-    sep, shift = 70, 10
-    width_label = Label(x, y + shift, 'Width:', font, settings_layout)
-    width_input = TextInput(x + sep, y, 60, 30, font, IntValidator(9, 30), settings_layout)
-    height_label = Label(x, y + 40 + shift, 'Height:', font, settings_layout)
-    height_input = TextInput(x + sep, y + 40, 60, 30, font, IntValidator(9, 30), settings_layout)
-    mines_count_label = Label(x, y + 80 + shift, 'Mines:', font, settings_layout)
-    mines_count_input = TextInput(x + sep, y + 80, 60, 30, font, IntValidator(10, 99), settings_layout)
-
-    ok_button = Button(w - 100, y + 150, 75, 30, 'OK', font, settings_layout)
-    screens['settings'].fill(MAIN_GRAY)
+    (screen, screens, field, indicator, timer, panel, mine_counter, settings_layout,
+     mines_count_input, height_input, width_input) = [None] * 11
+    init_screens(**current_preset)
+    change_screen('settings')
 
     while True:
         for event in pg.event.get():
@@ -191,10 +219,17 @@ if __name__ == '__main__':
                     if indicator.release():
                         timer.set_value(0)
                         pg.time.set_timer(pg.USEREVENT, 0)
-                        mine_counter.set_value(MINES_COUNT)
-                        field.__init__(N, N, LEFT_INDENT, TOP_INDENT, CELL_SIZE, indicator, mine_counter)
+                        mine_counter.set_value(mines_count)
+                        field.__init__(*current_preset['size'], LEFT_INDENT, TOP_INDENT,
+                                       CELL_SIZE, indicator, mine_counter)
                 if event.type == pg.USEREVENT:
                     timer.change_value(1)
+            elif current_screen == 'settings':
+                if event.type == UPDATEBOUNDSEVENT:
+                    mines_count_input.validator.update_bounds(
+                        max_val=height_input.get_value() * width_input.get_value() - 1
+                    )
+                settings_layout.update(event)
         panel.update()
         field.draw(screens['main'])
         panel.draw(screens['main'])

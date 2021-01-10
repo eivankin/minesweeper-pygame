@@ -54,3 +54,13 @@ class IntValidator(AbstractValidator):
         :return is_value_valid: True if value is a valid integer (validates by regular expression)
         and belongs to interval [min_val, max_val]."""
         return bool(re.match(r'[\-0-9]+', value)) and self.min_val <= int(value) <= self.max_val
+
+    def update_bounds(self, min_val=None, max_val=None):
+        if min_val is not None:
+            self.min_val = min_val
+            if min_val > self.max_val:
+                self.max_val = min_val
+        if max_val is not None:
+            self.max_val = max_val
+            if max_val < self.min_val:
+                self.min_val = max_val
