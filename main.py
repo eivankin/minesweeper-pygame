@@ -20,9 +20,7 @@ def change_screen(to):
     if to == 'settings':
         pg.time.set_timer(TOGGLECURSOREVENT, 500)
     if to == 'main' and current_screen == 'settings':
-        preset_name = PRESETS_FROM_INDEXES.get(
-            next(filter(lambda x: x[1].checked, enumerate(radio_group)))[0], 'custom'
-        )
+        preset_name = get_preset_name()
         # DEBUG
         print(PRESETS.get(preset_name, {'size': (width_input.get_value(), height_input.get_value()),
                                         'mines': mines_count_input.get_value()}))
@@ -32,7 +30,7 @@ def change_screen(to):
 
 def init_screens(size, mines):
     global screen, screens, field, indicator, timer, panel, mine_counter, settings_layout, \
-        mines_count_input, height_input, width_input, mines_count, radio_group
+        mines_count_input, height_input, width_input, mines_count
 
     field_w, field_h = size
     mines_count = mines
@@ -59,7 +57,6 @@ def init_screens(size, mines):
 
     font = pg.font.Font('data/lcd.ttf', 20)
     settings_layout = pg.sprite.Group()
-    radio_group = pg.sprite.Group()
     r = 8
     x = FIELD_INDENT + 2 * r + 5
     header = Label(LEFT_INDENT, LEFT_INDENT, 'Difficulty', pg.font.Font('data/lcd.ttf', 24), settings_layout)
@@ -67,9 +64,13 @@ def init_screens(size, mines):
 
     for name, preset in PRESETS.items():
         a, b, mines = *preset['size'], preset['mines']
-        button = RadioButton(FIELD_INDENT, y, r, radio_group, settings_layout, checked=True)
+        button = RadioButton(FIELD_INDENT, y, r, settings_layout, checked=(name == 'newbie'))
         label = Label(x, y, f'{name.title()} ({a}×{b}, {mines} mines)', font, settings_layout)
         y += r * 2 + 10
+
+    custom_button = RadioButton(FIELD_INDENT, y, r, settings_layout)
+    custom_label = Label(x, y, 'Custom', font, settings_layout)
+    y += r * 2 + 10
 
     sep, shift = 70, 10
     width_label = Label(x, y + shift, 'Width:', font, settings_layout)
@@ -195,10 +196,9 @@ if __name__ == '__main__':
     pg.init()
     clock = pg.time.Clock()
     (screen, screens, field, indicator, timer, panel, mine_counter, settings_layout,
-     mines_count_input, height_input, width_input, radio_group) = [None] * 12
+     mines_count_input, height_input, width_input) = [None] * 11
     init_screens(**current_preset)
     change_screen('settings')
-
     while True:
         for event in pg.event.get():
             if event.type == pg.QUIT:

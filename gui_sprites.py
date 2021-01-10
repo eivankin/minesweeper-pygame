@@ -26,13 +26,15 @@ class TextInput(pg.sprite.Sprite):
         self.display_cursor = False
 
     def set_value(self, value):
-        if self.validator is None or self.validator.validate(value):
-            self.__value = value
-            self.value_change_handler()
+        self.__value = value
+        self.value_change_handler()
+
+    def is_valid(self):
+        return self.validator is None or self.validator.validate(self.__value)
 
     def get_value(self):
         if type(self.validator) == IntValidator:
-            return int(self.__value) if self.__value != '' else 0
+            return int(self.__value) if self.__value != '' and re.match(INT_REGEX, self.__value) else 0
         return self.__value
 
     def update(self, *args):
@@ -41,6 +43,8 @@ class TextInput(pg.sprite.Sprite):
                 self.display_cursor = not self.display_cursor
             if args[0].type == pg.MOUSEBUTTONDOWN:
                 self.active = self.rect.collidepoint(*args[0].pos)
+                if self.active:
+                    radio_group.sprites()[-1].set_checked()
             if args[0].type == pg.KEYDOWN and self.active:
                 self.set_value(self.__value + args[0].unicode)
             if args[0].type == pg.KEYDOWN and args[0].key == pg.K_BACKSPACE and self.active:
@@ -54,7 +58,7 @@ class TextInput(pg.sprite.Sprite):
 
 class RadioButton(pg.sprite.Sprite):
     def __init__(self, left_x, top_y, radius, *groups, checked=False):
-        super().__init__(*groups)
+        super().__init__(radio_group, *groups)
         self.r = radius
         self.rect = pg.Rect(left_x, top_y, radius * 2, radius * 2)
         self.image = pg.Surface((radius * 2, radius * 2))
@@ -67,11 +71,14 @@ class RadioButton(pg.sprite.Sprite):
         if self.checked:
             pg.draw.circle(self.image, 'black', (self.r, self.r), self.r - 3)
 
+    def set_checked(self):
+        for button in self.groups()[0].sprites():
+            button.checked = False
+        self.checked = True
+
     def update(self, *args):
         if args and args[0].type == pg.MOUSEBUTTONDOWN and self.rect.collidepoint(*args[0].pos):
-            for button in self.groups()[0].sprites():
-                button.checked = False
-            self.checked = True
+           self.set_checked()
         self._draw_current_state()
 
 
@@ -82,26 +89,41 @@ class Button(pg.sprite.Sprite):
         self.click_handler = on_click
         self.rect = pg.Rect(left_x, top_y, width, height)
         self.clicked = False
+        self.enabled = True
         self.width, self.height, self.label = width, height, label
         self._draw_current_state()
 
     def _draw_current_state(self):
+        text_color = (0, 0, 0)
         if self.clicked:
             self.image = draw_cell(self.width, self.height, convex=False)
-        else:
+        elif self.enabled:
             self.image = draw_cell(self.width, self.height)
-        text = self.font.render(self.label, True, (0, 0, 0))
+        else:
+            self.image.fill(DARK_GRAY)
+            pg.draw.rect(self.image, MAIN_GRAY, (2, 2, self.rect.w - 3, self.rect.h - 3))
+            text_color = DARK_GRAY
+        text = self.font.render(self.label, True, text_color)
         x, y = self.width // 2 - text.get_width() // 2, self.height // 2 - text.get_height() // 2
         self.image.blit(text, (x, y))
 
     def update(self, *args):
         if args:
-            if args[0].type == pg.MOUSEBUTTONDOWN and self.rect.collidepoint(*args[0].pos):
+            if args[0].type == pg.MOUSEBUTTONDOWN and self.rect.collidepoint(*args[0].pos) and self.enabled:
                 self.clicked = True
             elif args[0].type == pg.MOUSEBUTTONUP and self.clicked:
                 self.clicked = False
                 self.click_handler()
-            self._draw_current_state()
+        if get_preset_name() == 'custom':
+            for element in self.groups()[0].sprites():
+                if type(element) == TextInput and not element.is_valid():
+                    self.enabled = False
+                    break
+            else:
+                self.enabled = True
+        else:
+            self.enabled = True
+        self._draw_current_state()
 
 
 class Label(pg.sprite.Sprite):
