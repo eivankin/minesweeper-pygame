@@ -50,8 +50,8 @@ def init_screens(size, mines):
     button_font = pg.font.Font('data/lcd.ttf', 16)
     settings_button = MenuButton(0, 0, MENUBAR_HEIGHT, 'Settings', button_font,
                                  on_click=lambda: change_screen('settings'))
-    help_button = MenuButton(settings_button.rect.w, 0, MENUBAR_HEIGHT, 'Help', button_font)
-    menu_bar = pg.sprite.Group(settings_button, help_button)
+    # help_button = MenuButton(settings_button.rect.w, 0, MENUBAR_HEIGHT, 'Help', button_font)
+    menu_bar = pg.sprite.Group(settings_button)
 
     screens['main'].fill(MAIN_GRAY)
     screens['main'].blit(
