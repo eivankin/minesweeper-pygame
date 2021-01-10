@@ -9,7 +9,8 @@ PRESETS = {'newbie': {'size': (9, 9), 'mines': 10},
            'amateur': {'size': (16, 16), 'mines': 40},
            'professional': {'size': (30, 16), 'mines': 99}}
 PRESETS_FROM_INDEXES = {i: name for i, name in enumerate(PRESETS.keys())}
-# define it here for correct work
+
+# defined it here for correct work
 radio_group = pg.sprite.Group()
 INT_REGEX = r'(^|\-)[0-9]+$'
 
@@ -49,15 +50,7 @@ def draw_cell(width, height, indent=3, convex=True) -> pg.Surface:
     return s
 
 
-class AbstractValidator:
-    def __init__(self):
-        pass
-
-    def validate(self, value: str) -> bool:
-        pass
-
-
-class IntValidator(AbstractValidator):
+class IntValidator:
     def __init__(self, min_val: int, max_val: int, global_min=None):
         """:param min_val: minimal value of valid integer (inclusively).
         :param max_val: maximal value of valid integer (inclusively)."""

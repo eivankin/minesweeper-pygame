@@ -56,12 +56,23 @@ class TextInput(pg.sprite.Sprite):
         self.image.blit(self.font.render(text, True, (0, 0, 0)), (indent, indent))
 
 
-class RadioButton(pg.sprite.Sprite):
+class AbstractButton(pg.sprite.Sprite):
+    def __init__(self, left_x, top_y, width, height, *groups):
+        super().__init__(*groups)
+        self.rect = pg.Rect(left_x, top_y, width, height)
+        self.image = pg.Surface((width, height))
+
+    def _draw_current_state(self):
+        pass
+
+    def update(self, *args):
+        self._draw_current_state()
+
+
+class RadioButton(AbstractButton):
     def __init__(self, left_x, top_y, radius, *groups, checked=False):
-        super().__init__(radio_group, *groups)
+        super().__init__(left_x, top_y, radius * 2, radius * 2, radio_group, *groups)
         self.r = radius
-        self.rect = pg.Rect(left_x, top_y, radius * 2, radius * 2)
-        self.image = pg.Surface((radius * 2, radius * 2))
         self.checked = checked
         self._draw_current_state()
 
@@ -78,16 +89,15 @@ class RadioButton(pg.sprite.Sprite):
 
     def update(self, *args):
         if args and args[0].type == pg.MOUSEBUTTONDOWN and self.rect.collidepoint(*args[0].pos):
-           self.set_checked()
-        self._draw_current_state()
+            self.set_checked()
+        super().update()
 
 
-class Button(pg.sprite.Sprite):
+class Button(AbstractButton):
     def __init__(self, left_x, top_y, width, height, label, font: pg.font.Font, *groups, on_click=lambda: None):
-        super().__init__(*groups)
+        super().__init__(left_x, top_y, width, height, *groups)
         self.font = font
         self.click_handler = on_click
-        self.rect = pg.Rect(left_x, top_y, width, height)
         self.clicked = False
         self.enabled = True
         self.width, self.height, self.label = width, height, label
@@ -123,7 +133,7 @@ class Button(pg.sprite.Sprite):
                 self.enabled = True
         else:
             self.enabled = True
-        self._draw_current_state()
+        super().update()
 
 
 class Label(pg.sprite.Sprite):
@@ -141,3 +151,25 @@ class Label(pg.sprite.Sprite):
         if args and args[0].type == pg.MOUSEBUTTONDOWN and self.rect.collidepoint(args[0].pos) and \
                 self.assigned_item is not None:
             self.assigned_item.update(pg.event.Event(pg.MOUSEBUTTONDOWN, pos=self.assigned_item.rect.topleft))
+
+
+class MenuButton(AbstractButton):
+    def __init__(self, left_x, top_y, height, label, font: pg.font.Font, *groups, on_click=lambda: None):
+        super().__init__(left_x, top_y, font.render(label, True, 0).get_width() + 10, height, *groups)
+        self.hovered = False
+        self.clicked = False
+        self.font = font
+        self.label = label
+        self.click_handler = on_click
+
+    def _draw_current_state(self):
+        indent = (self.rect.h - self.font.get_height()) // 2
+        self.image.fill('#cce8ff' if self.clicked else ('#e5f3ff' if self.hovered else 'white'))
+        self.image.blit(self.font.render(self.label, True, (0, 0, 0)), (5, indent))
+
+    def update(self, *args):
+        self.hovered = self.rect.collidepoint(pg.mouse.get_pos())
+        if args and args[0].type == pg.MOUSEBUTTONUP and self.clicked:
+            self.click_handler()
+        self.clicked = args and args[0].type == pg.MOUSEBUTTONDOWN and self.hovered
+        super().update()

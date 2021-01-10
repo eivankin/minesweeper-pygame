@@ -29,8 +29,9 @@ def change_screen(to):
 
 def init_screens(size, mines):
     global screen, screens, field, indicator, timer, panel, mine_counter, settings_layout, \
-        mines_count_input, height_input, width_input
+        mines_count_input, height_input, width_input, menu_bar
     field_w, field_h = size
+    font = pg.font.Font('data/lcd.ttf', 20)
     w, h = LEFT_INDENT * 2 + CELL_SIZE * field_w, TOP_INDENT + CELL_SIZE * field_h + LEFT_INDENT + MENUBAR_HEIGHT
     screens = {name: pg.Surface((w, h)) for name in ['main', 'settings', 'help']}
     screen = pg.display.set_mode((w, h))
@@ -46,6 +47,12 @@ def init_screens(size, mines):
     field = Field(field_w, field_h, LEFT_INDENT, TOP_INDENT + MENUBAR_HEIGHT,
                   CELL_SIZE, indicator, mine_counter, mines)
 
+    button_font = pg.font.Font('data/lcd.ttf', 16)
+    settings_button = MenuButton(0, 0, MENUBAR_HEIGHT, 'Settings', button_font,
+                                 on_click=lambda: change_screen('settings'))
+    help_button = MenuButton(settings_button.rect.w, 0, MENUBAR_HEIGHT, 'Help', button_font)
+    menu_bar = pg.sprite.Group(settings_button, help_button)
+
     screens['main'].fill(MAIN_GRAY)
     screens['main'].blit(
         draw_cell(field_w * CELL_SIZE + FIELD_INDENT * 2, field_h * CELL_SIZE + FIELD_INDENT * 2, FIELD_INDENT, False),
@@ -54,13 +61,12 @@ def init_screens(size, mines):
                          (LEFT_INDENT - FIELD_INDENT, LEFT_INDENT - FIELD_INDENT + MENUBAR_HEIGHT))
     pg.draw.rect(screens['main'], 'white', (0, 0, w, MENUBAR_HEIGHT))
 
-    font = pg.font.Font('data/lcd.ttf', 20)
     settings_layout = pg.sprite.Group()
     r = 8
     x = FIELD_INDENT + 2 * r + 5
     header = Label(LEFT_INDENT, LEFT_INDENT, 'Difficulty', pg.font.Font('data/lcd.ttf', 24), settings_layout)
     y = header.rect.y + header.rect.h + 10
-
+    radio_group.empty()
     for name, preset in PRESETS.items():
         button = RadioButton(FIELD_INDENT, y, r, settings_layout, checked=(name == 'newbie'))
         Label(x, y, f'{name.title()} ({"×".join(map(str, preset["size"]))}, {preset["mines"]} mines)',
@@ -196,9 +202,9 @@ if __name__ == '__main__':
     pg.init()
     clock = pg.time.Clock()
     (screen, screens, field, indicator, timer, panel, mine_counter, settings_layout,
-     mines_count_input, height_input, width_input) = [None] * 11
+     mines_count_input, height_input, width_input, menu_bar) = [None] * 12
     init_screens(**PRESETS['newbie'])
-    change_screen('settings')
+    # change_screen('settings')
     while True:
         for event in pg.event.get():
             if event.type == pg.QUIT:
@@ -213,10 +219,11 @@ if __name__ == '__main__':
                         timer.set_value(0)
                         pg.time.set_timer(pg.USEREVENT, 0)
                         mine_counter.set_value(field.mines_count)
-                        field.__init__(field.w, field.h, LEFT_INDENT, TOP_INDENT,
-                                       CELL_SIZE, indicator, mine_counter, field.mines_count)
+                        field.__init__(field.w, field.h, field.left, field.top,
+                                       field.cell_size, indicator, mine_counter, field.mines_count)
                 if event.type == pg.USEREVENT:
                     timer.change_value(1)
+                menu_bar.update(event)
             elif current_screen == 'settings':
                 if event.type == UPDATEBOUNDSEVENT:
                     mines_count_input.validator.update_bounds(
@@ -226,6 +233,7 @@ if __name__ == '__main__':
         panel.update()
         field.draw(screens['main'])
         panel.draw(screens['main'])
+        menu_bar.draw(screens['main'])
         settings_layout.draw(screens['settings'])
         screen.blit(screens[current_screen], (0, 0))
         pg.display.flip()

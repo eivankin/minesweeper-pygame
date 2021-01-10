@@ -89,9 +89,7 @@ class Indicator(pg.sprite.Sprite):
     def click(self, mouse_pos):
         if self.rect.collidepoint(mouse_pos):
             self.lock_state = False
-            self.image.fill(DARK_GRAY)
-            pg.draw.rect(self.image, MAIN_GRAY,
-                         (2, 2, self.rect.w - 4, self.rect.h - 4), 0)
+            self.image = draw_cell(self.size, self.size, convex=False)
             self.change_state('ok')
             self.clicked = True
 
