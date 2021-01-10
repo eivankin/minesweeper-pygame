@@ -11,8 +11,6 @@ COUNTER_WIDTH = 82
 
 # global variables (sorry for using it)
 current_screen = 'main'
-mines_count = 10
-current_preset = PRESETS['newbie']
 
 
 def change_screen(to):
@@ -21,19 +19,17 @@ def change_screen(to):
         pg.time.set_timer(TOGGLECURSOREVENT, 500)
     if to == 'main' and current_screen == 'settings':
         preset_name = get_preset_name()
-        # DEBUG
-        print(PRESETS.get(preset_name, {'size': (width_input.get_value(), height_input.get_value()),
-                                        'mines': mines_count_input.get_value()}))
+        current_preset = PRESETS.get(preset_name, {'size': (width_input.get_value(), height_input.get_value()),
+                                                   'mines': mines_count_input.get_value()})
+        init_screens(**current_preset)
     if to in ('main', 'settings', 'help'):
         current_screen = to
 
 
 def init_screens(size, mines):
     global screen, screens, field, indicator, timer, panel, mine_counter, settings_layout, \
-        mines_count_input, height_input, width_input, mines_count
-
+        mines_count_input, height_input, width_input
     field_w, field_h = size
-    mines_count = mines
     w, h = LEFT_INDENT * 2 + CELL_SIZE * field_w, TOP_INDENT + CELL_SIZE * field_h + LEFT_INDENT
     screens = {name: pg.Surface((w, h)) for name in ['main', 'settings', 'help']}
     screen = pg.display.set_mode((w, h))
@@ -41,12 +37,12 @@ def init_screens(size, mines):
 
     panel_y = LEFT_INDENT - FIELD_INDENT + (TOP_INDENT - 25) / 2 - INDICATOR_SIZE // 2
     indicator = Indicator(LEFT_INDENT + CELL_SIZE * field_w / 2 - INDICATOR_SIZE // 2, panel_y, INDICATOR_SIZE)
-    mine_counter = Counter(LEFT_INDENT * 2 - FIELD_INDENT, panel_y, COUNTER_WIDTH, INDICATOR_SIZE, mines_count)
+    mine_counter = Counter(LEFT_INDENT * 2 - FIELD_INDENT, panel_y, COUNTER_WIDTH, INDICATOR_SIZE, mines)
     timer = Counter(field_w * CELL_SIZE + LEFT_INDENT - FIELD_INDENT * 2 - COUNTER_WIDTH,
                     panel_y, COUNTER_WIDTH, INDICATOR_SIZE)
 
     panel = pg.sprite.Group(indicator, mine_counter, timer)
-    field = Field(field_w, field_h, LEFT_INDENT, TOP_INDENT, CELL_SIZE, indicator, mine_counter)
+    field = Field(field_w, field_h, LEFT_INDENT, TOP_INDENT, CELL_SIZE, indicator, mine_counter, mines)
 
     screens['main'].fill(MAIN_GRAY)
     screens['main'].blit(
@@ -89,8 +85,9 @@ def init_screens(size, mines):
 
 class Field(pg.sprite.Group):
     def __init__(self, width, height, left_indent, top_indent,
-                 cell_size, indicator, counter, *sprites):
+                 cell_size, indicator, counter, mines_count, *sprites):
         super().__init__(*sprites)
+        self.mines_count = mines_count
         self.indicator = indicator
         self.counter = counter
         self.w = width
@@ -106,10 +103,10 @@ class Field(pg.sprite.Group):
         self.last_coords = None
         self.marked = set()
 
-    def init_mines(self, exclude_coords, mines_count=mines_count):
+    def init_mines(self, exclude_coords):
         coords = set(product(range(self.h), range(self.w)))
         coords.remove(exclude_coords)
-        for _ in range(mines_count):
+        for _ in range(self.mines_count):
             c = choice(list(coords))
             self.mines.add(c)
             self.field[c[0]][c[1]].set_content('mine')
@@ -118,9 +115,6 @@ class Field(pg.sprite.Group):
                                    row[max(0, c[1] - 1):min(self.w, c[1] + 2)]):
                     cell.set_content(cell.content + 1)
             coords.remove(c)
-        # DEBUG
-        # from pprint import pprint
-        # pprint(self.field)
 
     def get_cell(self, mouse_pos):
         x, y = mouse_pos
@@ -197,7 +191,7 @@ if __name__ == '__main__':
     clock = pg.time.Clock()
     (screen, screens, field, indicator, timer, panel, mine_counter, settings_layout,
      mines_count_input, height_input, width_input) = [None] * 11
-    init_screens(**current_preset)
+    init_screens(**PRESETS['newbie'])
     change_screen('settings')
     while True:
         for event in pg.event.get():
@@ -212,9 +206,9 @@ if __name__ == '__main__':
                     if indicator.release():
                         timer.set_value(0)
                         pg.time.set_timer(pg.USEREVENT, 0)
-                        mine_counter.set_value(mines_count)
-                        field.__init__(*current_preset['size'], LEFT_INDENT, TOP_INDENT,
-                                       CELL_SIZE, indicator, mine_counter)
+                        mine_counter.set_value(field.mines_count)
+                        field.__init__(field.w, field.h, LEFT_INDENT, TOP_INDENT,
+                                       CELL_SIZE, indicator, mine_counter, field.mines_count)
                 if event.type == pg.USEREVENT:
                     timer.change_value(1)
             elif current_screen == 'settings':
