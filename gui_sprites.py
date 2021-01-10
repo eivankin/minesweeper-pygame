@@ -53,17 +53,26 @@ class TextInput(pg.sprite.Sprite):
 
 
 class RadioButton(pg.sprite.Sprite):
-    def __init__(self, left_x, top_y, radius, *groups):
+    def __init__(self, left_x, top_y, radius, *groups, checked=False):
         super().__init__(*groups)
+        self.r = radius
         self.rect = pg.Rect(left_x, top_y, radius * 2, radius * 2)
         self.image = pg.Surface((radius * 2, radius * 2))
+        self.checked = checked
+        self._draw_current_state()
+
+    def _draw_current_state(self):
         self.image.fill(MAIN_GRAY)
-        pg.draw.circle(self.image, 'black', (radius, radius), radius, 1)
-        pg.draw.circle(self.image, 'black', (radius, radius), radius - 3)
-        self.checked = False
+        pg.draw.circle(self.image, 'black', (self.r, self.r), self.r, 1)
+        if self.checked:
+            pg.draw.circle(self.image, 'black', (self.r, self.r), self.r - 3)
 
     def update(self, *args):
-        pass
+        if args and args[0].type == pg.MOUSEBUTTONDOWN and self.rect.collidepoint(*args[0].pos):
+            for button in self.groups()[0].sprites():
+                button.checked = False
+            self.checked = True
+        self._draw_current_state()
 
 
 class Button(pg.sprite.Sprite):

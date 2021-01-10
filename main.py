@@ -8,9 +8,6 @@ LEFT_INDENT, TOP_INDENT, CELL_SIZE = 15, 94, 30
 FIELD_INDENT = 5
 INDICATOR_SIZE = 50
 COUNTER_WIDTH = 82
-PRESETS = {'newbie': {'size': (9, 9), 'mines': 10},
-           'amateur': {'size': (16, 16), 'mines': 40},
-           'prof': {'size': (30, 16), 'mines': 99}}
 
 # global variables (sorry for using it)
 current_screen = 'main'
@@ -23,14 +20,19 @@ def change_screen(to):
     if to == 'settings':
         pg.time.set_timer(TOGGLECURSOREVENT, 500)
     if to == 'main' and current_screen == 'settings':
-        print()
+        preset_name = PRESETS_FROM_INDEXES.get(
+            next(filter(lambda x: x[1].checked, enumerate(radio_group)))[0], 'custom'
+        )
+        # DEBUG
+        print(PRESETS.get(preset_name, {'size': (width_input.get_value(), height_input.get_value()),
+                                        'mines': mines_count_input.get_value()}))
     if to in ('main', 'settings', 'help'):
         current_screen = to
 
 
 def init_screens(size, mines):
     global screen, screens, field, indicator, timer, panel, mine_counter, settings_layout, \
-        mines_count_input, height_input, width_input, mines_count
+        mines_count_input, height_input, width_input, mines_count, radio_group
 
     field_w, field_h = size
     mines_count = mines
@@ -61,24 +63,14 @@ def init_screens(size, mines):
     r = 8
     x = FIELD_INDENT + 2 * r + 5
     header = Label(LEFT_INDENT, LEFT_INDENT, 'Difficulty', pg.font.Font('data/lcd.ttf', 24), settings_layout)
-
     y = header.rect.y + header.rect.h + 10
-    newbie_button = RadioButton(FIELD_INDENT, y, r, radio_group, settings_layout)
-    newbie_label = Label(x, y, 'Newbie (9×9, 10 mines)', font, settings_layout)
 
-    y = newbie_button.rect.y + r * 2 + 10
-    amateur_button = RadioButton(FIELD_INDENT, y, r, radio_group, settings_layout)
-    amateur_label = Label(x, y, 'Amateur (16×16, 40 mines)', font, settings_layout)
+    for name, preset in PRESETS.items():
+        a, b, mines = *preset['size'], preset['mines']
+        button = RadioButton(FIELD_INDENT, y, r, radio_group, settings_layout, checked=True)
+        label = Label(x, y, f'{name.title()} ({a}×{b}, {mines} mines)', font, settings_layout)
+        y += r * 2 + 10
 
-    y = amateur_button.rect.y + r * 2 + 10
-    professional_button = RadioButton(FIELD_INDENT, y, r, radio_group, settings_layout)
-    professional_label = Label(x, y, 'Professional (16×30, 99 mines)', font, settings_layout)
-
-    y = professional_button.rect.y + r * 2 + 10
-    custom_button = RadioButton(FIELD_INDENT, y, r, radio_group, settings_layout)
-    custom_label = Label(x, y, 'Custom', font, settings_layout)
-
-    y = custom_button.rect.y + r * 2 + 15
     sep, shift = 70, 10
     width_label = Label(x, y + shift, 'Width:', font, settings_layout)
     width_input = TextInput(x + sep, y, 60, 30, font, IntValidator(1, 30),
@@ -89,7 +81,8 @@ def init_screens(size, mines):
     mines_count_label = Label(x, y + 80 + shift, 'Mines:', font, settings_layout)
     mines_count_input = TextInput(x + sep, y + 80, 60, 30, font, IntValidator(1, 99), settings_layout)
 
-    ok_button = Button(w - 100, y + 150, 75, 30, 'OK', font, settings_layout, on_click=lambda: change_screen('main'))
+    ok_button = Button(w - 100, y + 150, 75, 30, 'OK', font, settings_layout,
+                       on_click=lambda: change_screen('main'))
     screens['settings'].fill(MAIN_GRAY)
 
 
@@ -202,7 +195,7 @@ if __name__ == '__main__':
     pg.init()
     clock = pg.time.Clock()
     (screen, screens, field, indicator, timer, panel, mine_counter, settings_layout,
-     mines_count_input, height_input, width_input) = [None] * 11
+     mines_count_input, height_input, width_input, radio_group) = [None] * 12
     init_screens(**current_preset)
     change_screen('settings')
 

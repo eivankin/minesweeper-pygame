@@ -4,6 +4,10 @@ import re
 
 MAIN_GRAY = (191, 191, 191)
 DARK_GRAY = (127, 127, 129)
+PRESETS = {'newbie': {'size': (9, 9), 'mines': 10},
+           'amateur': {'size': (16, 16), 'mines': 40},
+           'professional': {'size': (30, 16), 'mines': 99}}
+PRESETS_FROM_INDEXES = {i: name for i, name in enumerate(PRESETS.keys())}
 
 
 def terminate():
