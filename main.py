@@ -60,7 +60,10 @@ def init_screens(size, mines):
     screens['main'].blit(draw_cell(field_w * CELL_SIZE + FIELD_INDENT * 2, TOP_INDENT - 25, convex=False),
                          (LEFT_INDENT - FIELD_INDENT, LEFT_INDENT - FIELD_INDENT + MENUBAR_HEIGHT))
     pg.draw.rect(screens['main'], 'white', (0, 0, w, MENUBAR_HEIGHT))
-
+    if settings_layout is not None:
+        values = [i.get_value(str) for i in settings_layout if type(i) == TextInput]
+    else:
+        values = [''] * 3
     settings_layout = pg.sprite.Group()
     r = 8
     x0 = w / 2 - 150
@@ -68,25 +71,32 @@ def init_screens(size, mines):
     x = x0 + FIELD_INDENT + 2 * r + 5
     header = Label(x0 + LEFT_INDENT, y0 + LEFT_INDENT, 'Difficulty', pg.font.Font('data/lcd.ttf', 24), settings_layout)
     y = header.rect.y + header.rect.h + 10
+    if len(radio_group) > 0:
+        checked_buttons = [b.checked for b in radio_group.sprites()]
+    else:
+        checked_buttons = [True] + [False] * len(PRESETS)
     radio_group.empty()
-    for name, preset in PRESETS.items():
-        button = RadioButton(x0 + FIELD_INDENT, y, r, settings_layout, checked=(name == 'newbie'))
+    for (name, preset), checked in zip(PRESETS.items(), checked_buttons):
+        button = RadioButton(x0 + FIELD_INDENT, y, r, settings_layout, checked=checked)
         Label(x, y, f'{name.title()} ({"×".join(map(str, preset["size"]))}, {preset["mines"]} mines)',
               font, settings_layout, assigned_item=button)
         y += r * 2 + 10
 
-    button = RadioButton(x0 + FIELD_INDENT, y, r, settings_layout)
+    button = RadioButton(x0 + FIELD_INDENT, y, r, settings_layout, checked=checked_buttons[-1])
     Label(x, y, 'Custom', font, settings_layout, assigned_item=button)
     y += r * 2 + 10
 
     sep, shift = 70, 10
     width_input = TextInput(x + sep, y, 60, 30, font, IntValidator(1, 24),
                             settings_layout, on_value_change=handle_change)
+    width_input.set_value(values[0])
     Label(x, y + shift, 'Width:', font, settings_layout, assigned_item=width_input)
     height_input = TextInput(x + sep, y + 40, 60, 30, font, IntValidator(1, 24),
                              settings_layout, on_value_change=handle_change)
+    height_input.set_value(values[1])
     Label(x, y + 40 + shift, 'Height:', font, settings_layout, assigned_item=height_input)
     mines_count_input = TextInput(x + sep, y + 80, 60, 30, font, IntValidator(10, 99), settings_layout)
+    mines_count_input.set_value(values[2])
     Label(x, y + 80 + shift, 'Mines:', font, settings_layout, assigned_item=mines_count_input)
 
     Button(x0 + 200, y + 150, 75, 30, 'OK', font, settings_layout,

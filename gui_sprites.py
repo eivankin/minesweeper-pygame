@@ -32,8 +32,8 @@ class TextInput(pg.sprite.Sprite):
     def is_valid(self):
         return self.validator is None or self.validator.validate(self.__value)
 
-    def get_value(self):
-        if type(self.validator) == IntValidator:
+    def get_value(self, return_type=None):
+        if type(self.validator) == IntValidator and return_type != str:
             return int(self.__value) if self.__value != '' and re.match(INT_REGEX, self.__value) else 0
         return self.__value
 
