@@ -8,6 +8,7 @@ LEFT_INDENT, TOP_INDENT, CELL_SIZE = 15, 94, 30
 FIELD_INDENT = 5
 INDICATOR_SIZE = 50
 COUNTER_WIDTH = 82
+MENUBAR_HEIGHT = 20
 
 # global variables (sorry for using it)
 current_screen = 'main'
@@ -30,26 +31,28 @@ def init_screens(size, mines):
     global screen, screens, field, indicator, timer, panel, mine_counter, settings_layout, \
         mines_count_input, height_input, width_input
     field_w, field_h = size
-    w, h = LEFT_INDENT * 2 + CELL_SIZE * field_w, TOP_INDENT + CELL_SIZE * field_h + LEFT_INDENT
+    w, h = LEFT_INDENT * 2 + CELL_SIZE * field_w, TOP_INDENT + CELL_SIZE * field_h + LEFT_INDENT + MENUBAR_HEIGHT
     screens = {name: pg.Surface((w, h)) for name in ['main', 'settings', 'help']}
     screen = pg.display.set_mode((w, h))
     pg.display.set_caption('Minesweeper')
 
-    panel_y = LEFT_INDENT - FIELD_INDENT + (TOP_INDENT - 25) / 2 - INDICATOR_SIZE // 2
+    panel_y = LEFT_INDENT - FIELD_INDENT + (TOP_INDENT - 25) / 2 - INDICATOR_SIZE // 2 + MENUBAR_HEIGHT
     indicator = Indicator(LEFT_INDENT + CELL_SIZE * field_w / 2 - INDICATOR_SIZE // 2, panel_y, INDICATOR_SIZE)
     mine_counter = Counter(LEFT_INDENT * 2 - FIELD_INDENT, panel_y, COUNTER_WIDTH, INDICATOR_SIZE, mines)
     timer = Counter(field_w * CELL_SIZE + LEFT_INDENT - FIELD_INDENT * 2 - COUNTER_WIDTH,
                     panel_y, COUNTER_WIDTH, INDICATOR_SIZE)
 
     panel = pg.sprite.Group(indicator, mine_counter, timer)
-    field = Field(field_w, field_h, LEFT_INDENT, TOP_INDENT, CELL_SIZE, indicator, mine_counter, mines)
+    field = Field(field_w, field_h, LEFT_INDENT, TOP_INDENT + MENUBAR_HEIGHT,
+                  CELL_SIZE, indicator, mine_counter, mines)
 
     screens['main'].fill(MAIN_GRAY)
     screens['main'].blit(
         draw_cell(field_w * CELL_SIZE + FIELD_INDENT * 2, field_h * CELL_SIZE + FIELD_INDENT * 2, FIELD_INDENT, False),
-        (LEFT_INDENT - FIELD_INDENT, TOP_INDENT - FIELD_INDENT))
+        (LEFT_INDENT - FIELD_INDENT, TOP_INDENT - FIELD_INDENT + MENUBAR_HEIGHT))
     screens['main'].blit(draw_cell(field_w * CELL_SIZE + FIELD_INDENT * 2, TOP_INDENT - 25, convex=False),
-                         (LEFT_INDENT - FIELD_INDENT, LEFT_INDENT - FIELD_INDENT))
+                         (LEFT_INDENT - FIELD_INDENT, LEFT_INDENT - FIELD_INDENT + MENUBAR_HEIGHT))
+    pg.draw.rect(screens['main'], 'white', (0, 0, w, MENUBAR_HEIGHT))
 
     font = pg.font.Font('data/lcd.ttf', 20)
     settings_layout = pg.sprite.Group()
@@ -59,24 +62,24 @@ def init_screens(size, mines):
     y = header.rect.y + header.rect.h + 10
 
     for name, preset in PRESETS.items():
-        RadioButton(FIELD_INDENT, y, r, settings_layout, checked=(name == 'newbie'))
-        Label(x, y, f'{name.title()} ({"×".join(preset["size"])}, {preset["mines"]} mines)',
-              font, settings_layout)
+        button = RadioButton(FIELD_INDENT, y, r, settings_layout, checked=(name == 'newbie'))
+        Label(x, y, f'{name.title()} ({"×".join(map(str, preset["size"]))}, {preset["mines"]} mines)',
+              font, settings_layout, assigned_item=button)
         y += r * 2 + 10
 
-    RadioButton(FIELD_INDENT, y, r, settings_layout)
-    Label(x, y, 'Custom', font, settings_layout)
+    button = RadioButton(FIELD_INDENT, y, r, settings_layout)
+    Label(x, y, 'Custom', font, settings_layout, assigned_item=button)
     y += r * 2 + 10
 
     sep, shift = 70, 10
-    Label(x, y + shift, 'Width:', font, settings_layout)
     width_input = TextInput(x + sep, y, 60, 30, font, IntValidator(1, 24),
                             settings_layout, on_value_change=handle_change)
-    Label(x, y + 40 + shift, 'Height:', font, settings_layout)
+    Label(x, y + shift, 'Width:', font, settings_layout, assigned_item=width_input)
     height_input = TextInput(x + sep, y + 40, 60, 30, font, IntValidator(1, 24),
                              settings_layout, on_value_change=handle_change)
-    Label(x, y + 80 + shift, 'Mines:', font, settings_layout)
+    Label(x, y + 40 + shift, 'Height:', font, settings_layout, assigned_item=height_input)
     mines_count_input = TextInput(x + sep, y + 80, 60, 30, font, IntValidator(10, 99), settings_layout)
+    Label(x, y + 80 + shift, 'Mines:', font, settings_layout, assigned_item=mines_count_input)
 
     Button(w - 100, y + 150, 75, 30, 'OK', font, settings_layout,
            on_click=lambda: change_screen('main'))

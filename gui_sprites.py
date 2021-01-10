@@ -127,11 +127,17 @@ class Button(pg.sprite.Sprite):
 
 
 class Label(pg.sprite.Sprite):
-    def __init__(self, left_x, top_y, text, font: pg.font.Font, *groups):
+    def __init__(self, left_x, top_y, text, font: pg.font.Font, *groups, assigned_item=None):
         super().__init__(*groups)
+        self.assigned_item = assigned_item
         text_surface = font.render(text, True, (0, 0, 0))
         w, h = text_surface.get_width(), text_surface.get_height()
         self.image = pg.Surface((w, h))
         self.image.fill(MAIN_GRAY)
         self.image.blit(text_surface, (0, 0))
         self.rect = pg.Rect(left_x, top_y, w, h)
+
+    def update(self, *args):
+        if args and args[0].type == pg.MOUSEBUTTONDOWN and self.rect.collidepoint(args[0].pos) and \
+                self.assigned_item is not None:
+            self.assigned_item.update(pg.event.Event(pg.MOUSEBUTTONDOWN, pos=self.assigned_item.rect.topleft))
