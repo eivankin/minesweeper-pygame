@@ -233,7 +233,7 @@ if __name__ == '__main__':
     clock = pg.time.Clock()
     (screen, screens, field, indicator, timer, panel, mine_counter, settings_layout,
      mines_count_input, height_input, width_input, menu_bar, help_layout) = [None] * 13
-    init_screens(**PRESETS['newbie'])
+    init_screens(**PRESETS[list(PRESETS.keys())[0]])
     # change_screen('settings')
     while True:
         for event in pg.event.get():
