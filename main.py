@@ -51,7 +51,7 @@ def init_screens(size, mines):
     settings_button = MenuButton(0, 0, MENUBAR_HEIGHT, 'Settings', button_font,
                                  on_click=lambda: change_screen('settings'))
     help_button = MenuButton(settings_button.rect.w, 0, MENUBAR_HEIGHT, 'Help', button_font,
-                             on_click=lambda : change_screen('help'))
+                             on_click=lambda: change_screen('help'))
     menu_bar = pg.sprite.Group(settings_button, help_button)
 
     screens['main'].fill(MAIN_GRAY)
@@ -107,9 +107,19 @@ def init_screens(size, mines):
 
     screens['help'].fill(MAIN_GRAY)
     help_layout = pg.sprite.Group()
-    Label(x0 + LEFT_INDENT, y0 + LEFT_INDENT, 'Help', header_font, help_layout)
-    Label(x0 + LEFT_INDENT, h - 60, '© dQw4w9WgXcQ Games, 2021', font, help_layout)
-    Label(x0 + LEFT_INDENT, h - 30, 'Original game made by Microsoft', font, help_layout)
+    help_header = Label(x0 + LEFT_INDENT, y0 + LEFT_INDENT, 'Help', header_font, help_layout)
+    y = y0 + LEFT_INDENT + help_header.rect.h + 15
+    with open('docs/help.txt') as f:
+        for line in f.read().split('\n'):
+            label = Label(x0 + LEFT_INDENT, y, line, font, help_layout)
+            y += label.rect.h + 5
+    y += 30
+    little_font = pg.font.Font('data/lcd.ttf', 16)
+    Label(x0 + LEFT_INDENT, y, '© dQw4w9WgXcQ Games, 2021', little_font, help_layout)
+    y += 20
+    Label(x0 + LEFT_INDENT, y, 'Original game made by Microsoft', little_font, help_layout)
+    Button(w - x0 - 150 - LEFT_INDENT, y0 + LEFT_INDENT - FIELD_INDENT, 150, 30, 'Back to game →', font,
+           help_layout, on_click=lambda: change_screen('main'))
 
 
 class Field(pg.sprite.Group):
@@ -250,6 +260,8 @@ if __name__ == '__main__':
                         max_val=height_input.get_value() * width_input.get_value() - 1
                     )
                 settings_layout.update(event)
+            else:
+                help_layout.update(event)
         panel.update()
         field.draw(screens['main'])
         panel.draw(screens['main'])

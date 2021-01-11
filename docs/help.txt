@@ -1,0 +1,12 @@
+You need to open all cells
+without mines to win.
+How to play: right click to open 
+cell, left click to set mark 
+(click once again to set another 
+mark or unset mark). Click 
+indicator (with emoji) to 
+restart the game.
+Go to settings to change field 
+parameters. Maximum values for 
+custom mode: width - 24,
+height - 24, mines - 99.
