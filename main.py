@@ -29,7 +29,7 @@ def change_screen(to):
 
 def init_screens(size, mines):
     global screen, screens, field, indicator, timer, panel, mine_counter, settings_layout, \
-        mines_count_input, height_input, width_input, menu_bar
+        mines_count_input, height_input, width_input, menu_bar, help_layout
     field_w, field_h = size
     font = pg.font.Font('data/lcd.ttf', 20)
     w, h = LEFT_INDENT * 2 + CELL_SIZE * field_w, TOP_INDENT + CELL_SIZE * field_h + LEFT_INDENT + MENUBAR_HEIGHT
@@ -50,8 +50,9 @@ def init_screens(size, mines):
     button_font = pg.font.Font('data/lcd.ttf', 16)
     settings_button = MenuButton(0, 0, MENUBAR_HEIGHT, 'Settings', button_font,
                                  on_click=lambda: change_screen('settings'))
-    # help_button = MenuButton(settings_button.rect.w, 0, MENUBAR_HEIGHT, 'Help', button_font)
-    menu_bar = pg.sprite.Group(settings_button)
+    help_button = MenuButton(settings_button.rect.w, 0, MENUBAR_HEIGHT, 'Help', button_font,
+                             on_click=lambda: change_screen('help'))
+    menu_bar = pg.sprite.Group(settings_button, help_button)
 
     screens['main'].fill(MAIN_GRAY)
     screens['main'].blit(
@@ -69,7 +70,8 @@ def init_screens(size, mines):
     x0 = w / 2 - 150
     y0 = h / 2 - 200
     x = x0 + FIELD_INDENT + 2 * r + 5
-    header = Label(x0 + LEFT_INDENT, y0 + LEFT_INDENT, 'Difficulty', pg.font.Font('data/lcd.ttf', 24), settings_layout)
+    header_font = pg.font.Font('data/lcd.ttf', 24)
+    header = Label(x0 + LEFT_INDENT, y0 + LEFT_INDENT, 'Difficulty', header_font, settings_layout)
     y = header.rect.y + header.rect.h + 10
     if len(radio_group) > 0:
         checked_buttons = [b.checked for b in radio_group.sprites()]
@@ -102,6 +104,22 @@ def init_screens(size, mines):
     Button(x0 + 200, y + 150, 75, 30, 'OK', font, settings_layout,
            on_click=lambda: change_screen('main'))
     screens['settings'].fill(MAIN_GRAY)
+
+    screens['help'].fill(MAIN_GRAY)
+    help_layout = pg.sprite.Group()
+    help_header = Label(x0 + LEFT_INDENT, y0 + LEFT_INDENT, 'Help', header_font, help_layout)
+    y = y0 + LEFT_INDENT + help_header.rect.h + 15
+    with open('docs/help.txt') as f:
+        for line in f.read().split('\n'):
+            label = Label(x0 + LEFT_INDENT, y, line, font, help_layout)
+            y += label.rect.h + 5
+    y += 30
+    little_font = pg.font.Font('data/lcd.ttf', 16)
+    Label(x0 + LEFT_INDENT, y, '© dQw4w9WgXcQ Games, 2021', little_font, help_layout)
+    y += 20
+    Label(x0 + LEFT_INDENT, y, 'Original game made by Microsoft', little_font, help_layout)
+    Button(w - x0 - 150 - LEFT_INDENT, y0 + LEFT_INDENT - FIELD_INDENT, 150, 30, 'Back to game →', font,
+           help_layout, on_click=lambda: change_screen('main'))
 
 
 class Field(pg.sprite.Group):
@@ -214,7 +232,7 @@ if __name__ == '__main__':
     pg.init()
     clock = pg.time.Clock()
     (screen, screens, field, indicator, timer, panel, mine_counter, settings_layout,
-     mines_count_input, height_input, width_input, menu_bar) = [None] * 12
+     mines_count_input, height_input, width_input, menu_bar, help_layout) = [None] * 13
     init_screens(**PRESETS['newbie'])
     # change_screen('settings')
     while True:
@@ -242,11 +260,14 @@ if __name__ == '__main__':
                         max_val=height_input.get_value() * width_input.get_value() - 1
                     )
                 settings_layout.update(event)
+            else:
+                help_layout.update(event)
         panel.update()
         field.draw(screens['main'])
         panel.draw(screens['main'])
         menu_bar.draw(screens['main'])
         settings_layout.draw(screens['settings'])
+        help_layout.draw(screens['help'])
         screen.blit(screens[current_screen], (0, 0))
         pg.display.flip()
         clock.tick(FPS)
