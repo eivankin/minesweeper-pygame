@@ -45,7 +45,7 @@ class TextInput(pg.sprite.Sprite):
                 self.active = self.rect.collidepoint(*args[0].pos)
                 if self.active:
                     radio_group.sprites()[-1].set_checked()
-            if args[0].type == pg.KEYDOWN and self.active:
+            if args[0].type == pg.KEYDOWN and self.active and args[0].unicode.isprintable():
                 self.set_value(self.__value + args[0].unicode)
             if args[0].type == pg.KEYDOWN and args[0].key == pg.K_BACKSPACE and self.active:
                 self.__value = self.__value[:-1]
