@@ -89,11 +89,11 @@ def init_screens(size, mines):
     y += r * 2 + 10
 
     sep, shift = 70, 10
-    width_input = TextInput(x + sep, y, 60, 30, font, IntValidator(1, 24),
+    width_input = TextInput(x + sep, y, 60, 30, font, IntValidator(9, 24),
                             settings_layout, on_value_change=handle_change)
     width_input.set_value(values[0])
     Label(x, y + shift, 'Width:', font, settings_layout, assigned_item=width_input)
-    height_input = TextInput(x + sep, y + 40, 60, 30, font, IntValidator(1, 24),
+    height_input = TextInput(x + sep, y + 40, 60, 30, font, IntValidator(9, 24),
                              settings_layout, on_value_change=handle_change)
     height_input.set_value(values[1])
     Label(x, y + 40 + shift, 'Height:', font, settings_layout, assigned_item=height_input)
