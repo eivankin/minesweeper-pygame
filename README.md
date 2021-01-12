@@ -1,6 +1,6 @@
 # minesweeper-pygame
 A PyGame project for Yandex Lyceum. 
-I tried to make something that will looks maximally like game from Windows XP.
+I tried to make something that will looks most similar to game from Windows XP.
 # Features
 - Scaled up 2 times. Default cell size is 30px, it may be changed in future releases or may be made editable for an user.
 - Original functions from Windows XP game.
