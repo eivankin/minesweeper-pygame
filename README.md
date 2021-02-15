@@ -7,7 +7,7 @@ I tried to make something that will looks as similar as possible to game from Wi
 # Install from source
 ## Prerequirements
 Python >=3.6 is required to run this application from source.
-## Instalation
+## Installation
 If there are no binaries for your platform in releases or you want to use the latest (dev) version, you shuold run the game from source:
 ```
 git clone https://github.com/eivankin/minesweeper-pygame
