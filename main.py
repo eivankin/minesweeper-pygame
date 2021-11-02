@@ -12,17 +12,20 @@ MENUBAR_HEIGHT = 20
 
 # global variables (sorry for using it)
 current_screen = 'main'
+current_preset = PRESETS[list(PRESETS.keys())[0]]
 
 
 def change_screen(to):
-    global current_screen
+    global current_screen, current_preset
     if to == 'settings':
         pg.time.set_timer(TOGGLECURSOREVENT, 500)
     if to == 'main' and current_screen == 'settings':
         preset_name = get_preset_name()
-        current_preset = PRESETS.get(preset_name, {'size': (width_input.get_value(), height_input.get_value()),
+        new_preset = PRESETS.get(preset_name, {'size': (width_input.get_value(), height_input.get_value()),
                                                    'mines': mines_count_input.get_value()})
-        init_screens(**current_preset)
+        if new_preset != current_preset:
+            cuurent_preset = new_preset
+            init_screens(**current_preset)
     if to in ('main', 'settings', 'help'):
         current_screen = to
 
@@ -233,8 +236,7 @@ if __name__ == '__main__':
     clock = pg.time.Clock()
     (screen, screens, field, indicator, timer, panel, mine_counter, settings_layout,
      mines_count_input, height_input, width_input, menu_bar, help_layout) = [None] * 13
-    init_screens(**PRESETS[list(PRESETS.keys())[0]])
-    # change_screen('settings')
+    init_screens(**current_preset)
     while True:
         for event in pg.event.get():
             if event.type == pg.QUIT:
