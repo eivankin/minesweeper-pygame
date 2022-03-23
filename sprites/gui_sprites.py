@@ -1,15 +1,17 @@
-from utilities import *
+from abc import ABC, abstractmethod
 
-UPDATEBOUNDSEVENT = pg.USEREVENT + 1
-TOGGLECURSOREVENT = pg.USEREVENT + 2
+import pygame as pg
 
+from misc.util import draw_cell, get_preset_name
+from misc.constants import DARK_GRAY, MAIN_GRAY, TOGGLECURSOREVENT
+from misc.input_validators import AbstractValidator
 
-def handle_change():
-    pg.event.post(pg.event.Event(UPDATEBOUNDSEVENT))
+RADIO_GROUP = pg.sprite.Group()
 
 
 class TextInput(pg.sprite.Sprite):
-    def __init__(self, left_x, top_y, width, height, font: pg.font.Font, value_validator=None,
+    def __init__(self, left_x, top_y, width, height, font: pg.font.Font,
+                 value_validator: AbstractValidator = None,
                  *groups, on_value_change=lambda: None):
         self.value_change_handler = on_value_change
         self.indent = 1
@@ -29,13 +31,13 @@ class TextInput(pg.sprite.Sprite):
         self.__value = value
         self.value_change_handler()
 
-    def is_valid(self):
-        return self.validator is None or self.validator.validate(self.__value)
+    def is_value_valid(self):
+        return self.validator is None or self.validator.is_valid(self.__value)
 
-    def get_value(self, return_type=None):
-        if type(self.validator) == IntValidator and return_type != str:
-            return int(self.__value) if self.__value != '' and re.match(INT_REGEX, self.__value) else 0
-        return self.__value
+    def get_value(self, return_type: type = str):
+        if not self.is_value_valid() or not self.__value:
+            return return_type()
+        return return_type(self.__value)
 
     def update(self, *args):
         if args:
@@ -44,24 +46,28 @@ class TextInput(pg.sprite.Sprite):
             if args[0].type == pg.MOUSEBUTTONDOWN:
                 self.active = self.rect.collidepoint(*args[0].pos)
                 if self.active:
-                    radio_group.sprites()[-1].set_checked()
+                    last_btn = RADIO_GROUP.sprites()[-1]
+                    assert isinstance(last_btn, RadioButton)
+                    last_btn.set_checked()
             if args[0].type == pg.KEYDOWN and self.active and args[0].unicode.isprintable():
                 self.set_value(self.__value + args[0].unicode)
             if args[0].type == pg.KEYDOWN and args[0].key == pg.K_BACKSPACE and self.active:
                 self.__value = self.__value[:-1]
         text = (self.__value + '|') if self.display_cursor and self.active else self.__value
         pg.draw.rect(self.image, 'white',
-                     (self.indent, self.indent, self.rect.w - self.indent * 2, self.rect.h - self.indent * 2))
+                     (self.indent, self.indent, self.rect.w - self.indent * 2,
+                      self.rect.h - self.indent * 2))
         indent = (self.rect.h - self.font.get_height()) // 2 - 1
         self.image.blit(self.font.render(text, True, (0, 0, 0)), (indent, indent))
 
 
-class AbstractButton(pg.sprite.Sprite):
+class AbstractButton(pg.sprite.Sprite, ABC):
     def __init__(self, left_x, top_y, width, height, *groups):
         super().__init__(*groups)
         self.rect = pg.Rect(left_x, top_y, width, height)
         self.image = pg.Surface((width, height))
 
+    @abstractmethod
     def _draw_current_state(self):
         pass
 
@@ -71,7 +77,7 @@ class AbstractButton(pg.sprite.Sprite):
 
 class RadioButton(AbstractButton):
     def __init__(self, left_x, top_y, radius, *groups, checked=False):
-        super().__init__(left_x, top_y, radius * 2, radius * 2, radio_group, *groups)
+        super().__init__(left_x, top_y, radius * 2, radius * 2, RADIO_GROUP, *groups)
         self.r = radius
         self.checked = checked
         self._draw_current_state()
@@ -94,7 +100,8 @@ class RadioButton(AbstractButton):
 
 
 class Button(AbstractButton):
-    def __init__(self, left_x, top_y, width, height, label, font: pg.font.Font, *groups, on_click=lambda: None):
+    def __init__(self, left_x, top_y, width, height, label, font: pg.font.Font, *groups,
+                 on_click=lambda: None):
         super().__init__(left_x, top_y, width, height, *groups)
         self.font = font
         self.click_handler = on_click
@@ -119,14 +126,15 @@ class Button(AbstractButton):
 
     def update(self, *args):
         if args:
-            if args[0].type == pg.MOUSEBUTTONDOWN and self.rect.collidepoint(*args[0].pos) and self.enabled:
+            if args[0].type == pg.MOUSEBUTTONDOWN and self.rect.collidepoint(
+                    *args[0].pos) and self.enabled:
                 self.clicked = True
             elif args[0].type == pg.MOUSEBUTTONUP and self.clicked:
                 self.clicked = False
                 self.click_handler()
-        if get_preset_name() == 'custom':
+        if get_preset_name(RADIO_GROUP) == 'custom':
             for element in self.groups()[0].sprites():
-                if type(element) == TextInput and not element.is_valid():
+                if isinstance(element, TextInput) and not element.is_value_valid():
                     self.enabled = False
                     break
             else:
@@ -150,12 +158,15 @@ class Label(pg.sprite.Sprite):
     def update(self, *args):
         if args and args[0].type == pg.MOUSEBUTTONDOWN and self.rect.collidepoint(args[0].pos) and \
                 self.assigned_item is not None:
-            self.assigned_item.update(pg.event.Event(pg.MOUSEBUTTONDOWN, pos=self.assigned_item.rect.topleft))
+            self.assigned_item.update(
+                pg.event.Event(pg.MOUSEBUTTONDOWN, pos=self.assigned_item.rect.topleft))
 
 
 class MenuButton(AbstractButton):
-    def __init__(self, left_x, top_y, height, label, font: pg.font.Font, *groups, on_click=lambda: None):
-        super().__init__(left_x, top_y, font.render(label, True, 0).get_width() + 10, height, *groups)
+    def __init__(self, left_x, top_y, height, label, font: pg.font.Font, *groups,
+                 on_click=lambda: None):
+        super().__init__(left_x, top_y, font.render(label, True, 0).get_width() + 10, height,
+                         *groups)
         self.hovered = False
         self.clicked = False
         self.font = font
