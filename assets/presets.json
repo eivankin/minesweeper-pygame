@@ -1,3 +1,0 @@
-{"beginner": {"size": [9, 9], "mines": 10},
- "intermediate": {"size": [16, 16], "mines": 40},
- "expert": {"size": [30, 16], "mines": 99}}
