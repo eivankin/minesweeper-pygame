@@ -12,7 +12,8 @@ RADIO_GROUP = pg.sprite.Group()
 class TextInput(pg.sprite.Sprite):
     def __init__(self, left_x, top_y, width, height, font: pg.font.Font,
                  value_validator: AbstractValidator = None,
-                 *groups, on_value_change=lambda: None):
+                 on_value_change=lambda: None,
+                 *groups):
         self.value_change_handler = on_value_change
         self.indent = 1
         self.font = font

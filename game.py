@@ -1,8 +1,9 @@
-import pygame as pg
 from random import choice
 from itertools import product
 from dataclasses import dataclass
 from typing import Optional
+
+import pygame as pg
 
 from sprites.game_elements import Cell, Counter, Indicator
 from sprites.gui_sprites import Label, TextInput, RadioButton, Button, MenuButton, RADIO_GROUP
@@ -151,17 +152,24 @@ class Game:
         self.screens = {name: pg.Surface((w, h)) for name in Screens}
         pg.display.set_caption('Minesweeper')
 
-        panel_y = self.layout.left_indent - self.layout.field_indent + (
-                self.layout.top_indent - 25) / 2 - self.layout.indicator_size // 2 + self.layout.menubar_height
+        panel_y = \
+            self.layout.left_indent - self.layout.field_indent + (
+                    self.layout.top_indent - 25) / 2 - self.layout.indicator_size // 2 + \
+            self.layout.menubar_height
+
         indicator = Indicator(
-            self.layout.left_indent + self.layout.cell_size * field_w / 2 - self.layout.indicator_size // 2,
+            self.layout.left_indent + self.layout.cell_size * field_w / 2 -
+            self.layout.indicator_size // 2,
             panel_y,
             self.layout.indicator_size)
+
         mine_counter = Counter(self.layout.left_indent * 2 - self.layout.field_indent, panel_y,
                                self.layout.counter_width,
                                self.layout.indicator_size, self.game_preset.mines_count)
+
         self.timer = Counter(
-            field_w * self.layout.cell_size + self.layout.left_indent - self.layout.field_indent * 2 - self.layout.counter_width,
+            field_w * self.layout.cell_size + self.layout.left_indent -
+            self.layout.field_indent * 2 - self.layout.counter_width,
             panel_y, self.layout.counter_width, self.layout.indicator_size)
 
         self.panel = pg.sprite.Group(indicator, mine_counter, self.timer)
@@ -214,7 +222,8 @@ class Game:
             button = RadioButton(x0 + self.layout.field_indent, y, r, self.settings_layout,
                                  checked=checked)
             Label(x, y,
-                  f'{name.title()} ({"×".join(map(str, preset.field_size))}, {preset.mines_count} mines)',
+                  f'{name.title()} ({"×".join(map(str, preset.field_size))}, '
+                  f'{preset.mines_count} mines)',
                   font, self.settings_layout, assigned_item=button)
             y += r * 2 + 10
 
@@ -274,7 +283,8 @@ class Game:
             new_preset = self.presets.get(preset_name,
                                           GamePreset(field_size=(self.width_input.get_value(int),
                                                                  self.height_input.get_value(int)),
-                                                     mines_count=self.mines_count_input.get_value(int)))
+                                                     mines_count=self.mines_count_input.get_value(
+                                                         int)))
             if new_preset != self.game_preset:
                 self.game_preset = new_preset
                 self.init_screens()

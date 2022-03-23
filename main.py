@@ -1,6 +1,7 @@
 import pygame as pg
 
 from game import Game, Field
+from misc.input_validators import IntValidator
 from misc.util import terminate, get_presets
 from misc.constants import UPDATEBOUNDSEVENT
 from misc.components import Screens, LayoutPreset
@@ -42,8 +43,10 @@ if __name__ == '__main__':
 
             elif game.current_screen == Screens.SETTINGS:
                 if event.type == UPDATEBOUNDSEVENT:
+                    assert isinstance(game.mines_count_input.validator, IntValidator)
                     game.mines_count_input.validator.update_bounds(
-                        max_val=game.height_input.get_value(int) * game.width_input.get_value(int) - 1
+                        max_val=game.height_input.get_value(int) *
+                        game.width_input.get_value(int) - 1
                     )
 
                 game.settings_layout.update(event)

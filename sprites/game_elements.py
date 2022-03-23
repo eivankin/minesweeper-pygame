@@ -85,7 +85,7 @@ class Indicator(pg.sprite.Sprite):
             try:
                 indent = (self.rect.w - self.state_size) / 2
                 self.image.blit(self.states[state], (indent, indent))
-                if state == GameStates.LOSE or state == GameStates.WIN:
+                if state in (GameStates.WIN, GameStates.LOSE):
                     self._lock_state = True
             except KeyError:
                 raise KeyError(f'No such state: {state}')
