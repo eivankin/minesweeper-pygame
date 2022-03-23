@@ -96,7 +96,7 @@ class Field(pg.sprite.Group):
                     self.last_coords = cell_coords
                     self.field[i][j].hold()
                 elif pressed[2] and (
-                        self.mine_counter.get_value(int) > 0 or self.field[i][j].mark is not None):
+                        self.mine_counter.get_value() > 0 or self.field[i][j].mark is not None):
                     deltas = {'F': -1, 'Q': 1, None: 0}
                     self.field[i][j].set_mark()
                     self.mine_counter.change_value(deltas[self.field[i][j].mark])
