@@ -1,3 +1,4 @@
+#!/bin/python3
 import pygame as pg
 
 from game import Game, Field
